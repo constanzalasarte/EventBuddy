@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import scala.util.Try
 
-object DataMarshalling {
+object DateMarshalling {
   implicit object DateJsonFormat extends JsonFormat[Date]{
     override def write(date: Date): JsValue = JsString(dateToIsoString(date))
 
