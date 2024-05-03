@@ -23,4 +23,19 @@ case class Events(private var events: Set[Event]) extends CheckEvents {
     if(foundEvent) events = result
     foundEvent
   }
+
+  override def byCreatorId(id: Int): Set[Event] = {
+    var result: Set[Event]= Set.empty
+    for (event <- events) {
+      if(event.getCreatorId == id) result = result + event
+    }
+    result
+  }
+
+  override def deleteByCreatorId(id: Int): Unit = {
+    val deleteEvents = byCreatorId(id)
+    for (event <- deleteEvents) {
+      deleteById(event.getId)
+    }
+  }
 }

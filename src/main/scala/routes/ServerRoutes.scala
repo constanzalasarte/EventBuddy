@@ -7,7 +7,7 @@ import user.{UserRoutes, Users}
 
 trait ServerRoutes {
   def combinedRoutes(users: Users, events: Events): Route = {
-    val userRoutes = UserRoutes(users)
+    val userRoutes = UserRoutes(users, events)
     val eventRoute = EventRoutes(events, users)
 
     Directives.concat(

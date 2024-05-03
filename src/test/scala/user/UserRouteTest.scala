@@ -1,6 +1,6 @@
 package user
 
-import event.Events
+import event.{Event, EventJsonProtocol, EventRequest, Events}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
@@ -9,12 +9,16 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import routes.PrincipalRoute
 
+import java.time.Instant
+import java.util.Date
 import scala.concurrent.Await
 
-class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with UserJsonProtocol{
+class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
   private val users = Users(Set.empty)
   private val events = Events(Set.empty)
   private val route = PrincipalRoute.combinedRoutes(users, events)
+
+  private val date = Date.from(Instant.now())
 
   "get no users" in {
     Get("/user") ~> route ~> check {
@@ -55,6 +59,30 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
       responseAs[String] shouldEqual "There is no user with id 2"
     }
     Get("/user/byId?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
+
+  "delete user by id" in {
+    val event = EventRequest("event name", "event description", 1, date)
+    Post("/event", event) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[Event].getName shouldEqual "event name"
+      responseAs[Event].getDescription shouldEqual "event description"
+      responseAs[Event].getCreatorId shouldEqual 1
+      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getId shouldEqual 1
+    }
+    Delete("/user/byId?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldEqual "User deleted"
+    }
+    Delete("/user/byId?id=2") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no user with id 2"
+    }
+    Delete("/user/byId?id=hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }

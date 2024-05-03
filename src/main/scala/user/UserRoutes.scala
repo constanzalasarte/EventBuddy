@@ -1,14 +1,15 @@
 package user
 
+import event.CheckEvents
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, entity, get, onSuccess, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class UserRoutes(users: Users) extends UserJsonProtocol {
+case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext
 
@@ -46,7 +47,29 @@ case class UserRoutes(users: Users) extends UserJsonProtocol {
           complete("todo")
         }
       },
+      delete {
+        parameters("id") { id => {
+          deleteUser(id)
+        }
+        }
+      }
     )
+  }
+
+  private def deleteUser(id: String) = {
+    try {
+      val user = checkUser(id.toInt)
+      if(user.isEmpty) complete(StatusCodes.NotFound, s"There is no user with id ${id.toInt}")
+      else{
+        events.deleteByCreatorId(id.toInt)
+        users.deleteById(id.toInt)
+        complete(StatusCodes.OK, s"User deleted")
+      }
+    }
+    catch {
+      case _: NumberFormatException =>
+        complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+    }
   }
 
   private def createUser(userRequest: UserRequest): Future[User] = {
