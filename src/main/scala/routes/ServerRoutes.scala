@@ -2,7 +2,7 @@ package routes
 
 import event.{EventRoutes, Events}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
-import org.apache.pekko.http.scaladsl.server.Directives.path
+import org.apache.pekko.http.scaladsl.server.Directives.pathPrefix
 import user.{UserRoutes, Users}
 
 trait ServerRoutes {
@@ -11,10 +11,10 @@ trait ServerRoutes {
     val eventRoute = EventRoutes(events, users)
 
     Directives.concat(
-      path("event") {
+      pathPrefix("event") {
         eventRoute.eventRoute
       },
-      path("user") {
+      pathPrefix("user") {
         userRoutes.userRoute
       }
     )

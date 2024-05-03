@@ -3,7 +3,7 @@ package user
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, entity, get, onSuccess, parameters, path, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, entity, get, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,26 +14,40 @@ case class UserRoutes(users: Users) extends UserJsonProtocol {
 
   def userRoute: Route =
   concat(
-    parameters("id") { id =>
-      get {
-        getUserById(id)
-      }
-      put {
-        complete("todo")
-      }
+    path("byId"){
+      userByIdRoute
     },
-    get {
-        complete(StatusCodes.OK, users.getUsers)
-    },
-    post  {
-      entity(as[UserRequest]) { userRequest =>
-        val userSaved: Future[User] = createUser(userRequest)
-        onSuccess(userSaved) { _ =>
-          complete(StatusCodes.Created, userSaved)
-        }
-      }
-    },
+    pathEnd{
+      concat(
+        get {
+          complete(StatusCodes.OK, users.getUsers)
+        },
+        post  {
+          entity(as[UserRequest]) { userRequest =>
+            val userSaved: Future[User] = createUser(userRequest)
+            onSuccess(userSaved) { _ =>
+              complete(StatusCodes.Created, userSaved)
+            }
+          }
+        },
+      )
+    }
   )
+
+  private def userByIdRoute = {
+    concat(
+      get {
+        parameters("id") { id =>
+          getUserById(id)
+        }
+      },
+      put {
+        parameters("id") { id =>
+          complete("todo")
+        }
+      },
+    )
+  }
 
   private def createUser(userRequest: UserRequest): Future[User] = {
     val user = userRequest.getUser
