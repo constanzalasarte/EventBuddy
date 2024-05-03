@@ -44,17 +44,17 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
   }
 
   "get user by id" in {
-    Get("/user?id=1") ~> route ~> check {
+    Get("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[User].getEmail shouldEqual "user@mail.com"
       responseAs[User].getUserName shouldEqual "userName"
       responseAs[User].getId shouldEqual 1
     }
-    Get("/user?id=2") ~> route ~> check {
+    Get("/user/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "There is no user with id 2"
     }
-    Get("/user?id=hola") ~> route ~> check {
+    Get("/user/byId?id=hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
