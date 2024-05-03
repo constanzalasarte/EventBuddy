@@ -61,4 +61,23 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
       eventsSet shouldEqual events.getEvents
     }
   }
+
+  "get event by id" in {
+    Get("/event?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[Event].getName shouldEqual "event name"
+      responseAs[Event].getDescription shouldEqual "event description"
+      responseAs[Event].getCreatorId shouldEqual 1
+      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getId shouldEqual 1
+    }
+    Get("/event?id=2") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no event with id 2"
+    }
+    Get("/event?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
 }

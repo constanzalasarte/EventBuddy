@@ -43,7 +43,6 @@ case class UserRoutes(users: Users) extends UserJsonProtocol {
 
   private def getUserById(id: String) = {
     try {
-      println(id.toInt)
       val user: Option[User] = checkUser(id.toInt)
       if (user.isEmpty) complete(StatusCodes.NotFound, s"There is no user with id ${id.toInt}")
       else
@@ -55,11 +54,7 @@ case class UserRoutes(users: Users) extends UserJsonProtocol {
     }
   }
 
-  private def checkUser(id: Int): Option[User] = {
-    for (user <- users.getUsers) {
-      if(user.getId == id) return Some(user)
-    }
-    None
-  }
+  private def checkUser(id: Int): Option[User] =
+    users.byID(id)
 
 }

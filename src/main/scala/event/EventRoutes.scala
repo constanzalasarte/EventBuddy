@@ -3,7 +3,7 @@ package event
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, entity, get, onSuccess, post}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, entity, get, onSuccess, parameters, post}
 import org.apache.pekko.http.scaladsl.server.Route
 import user.CheckUsers
 
@@ -28,6 +28,11 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
 
   def eventRoute: Route =
     concat(
+      parameters("id") {id =>
+        get{
+          getEventById(id)
+        }
+      },
       get {
         complete(StatusCodes.OK, events.getEvents)
       },
@@ -37,4 +42,20 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
         }
       },
     )
+
+  private def getEventById(id: String) = {
+    try {
+      val event: Option[Event] = checkEvent(id.toInt)
+      if (event.isEmpty) complete(StatusCodes.NotFound, s"There is no event with id ${id.toInt}")
+      else
+        complete(StatusCodes.OK, event.get)
+    }
+    catch {
+      case _: NumberFormatException =>
+        complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+    }
+  }
+
+  private def checkEvent(id: Int): Option[Event] =
+    events.byId(id)
 }
