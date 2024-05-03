@@ -1,0 +1,69 @@
+classDiagram
+    User <-- Element
+    User <|-- Guest
+    User <|-- Event
+    User <|-- Comment
+    User <|-- Review
+    Event <|-- Element
+    Event <|-- Guest
+    Event <|-- Comment
+    Event <|-- Review
+
+    class User{
+        id: Int
+        email: String
+        username: String
+        name: String?
+        password: String
+        defaultPic: Boolean
+        events: Event[]
+        guests: Guest[]
+        comments: Comment[]
+        elements: Element[]
+        reviews: Review[]
+    }
+    class Event{
+        id: Int
+        name: String
+        description: String
+        creatorId: Int
+        coordinates: Float[]
+        confirmationDeadline: DateTime
+        guests: Guest[]
+        comments: Comment[]
+        elements: Element[]
+        reviews: Review[]
+        date: DateTime
+    }
+    class Guest{
+        id: Int
+        userId: Int
+        eventId: Int
+        confirmationStatus: confirmationStatus
+        isHost: Boolean
+    }
+    class Element {
+        id       Int
+        name     String
+        quantity Int
+        eventId  Int
+        maxUsers Int
+        users    User[]
+    }
+
+    class Comment {
+        id        Int
+        userId    Int
+        eventId   Int
+        parentId  Int?
+        text      String
+        parent    Comment?
+        Comment   Comment[]
+    }
+
+    class Review {
+        id        Int
+        userId    Int
+        eventId   Int
+        rating    Int
+    }

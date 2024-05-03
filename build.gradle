@@ -1,0 +1,47 @@
+// build.gradle
+plugins {
+    id("com.github.maiflai.scalatest") version "0.32"
+    id "scala"
+    id "application"
+    id "distribution"
+    id "idea"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+group = "com.example"
+description = "Event Buddy"
+
+ext {
+    scalaLib = "org.scala-lang:scala-library:$scalaVersion"
+    scalaTest = "org.scalatest:scalatest_2.12:3.2.16"
+    flexmark = "com.vladsch.flexmark:flexmark-all:0.64.8"
+}
+
+def versions = [
+        PekkoVersion: "1.0.2",
+        ScalaBinary: "2.12"
+]
+
+dependencies {
+    testImplementation scalaTest
+    testRuntimeOnly flexmark
+    implementation scalaLib
+    implementation platform("org.apache.pekko:pekko-http-bom_${versions.ScalaBinary}:1.0.1")
+
+    implementation "org.apache.pekko:pekko-actor-typed_${versions.ScalaBinary}:${versions.PekkoVersion}"
+    implementation "org.apache.pekko:pekko-stream_${versions.ScalaBinary}:${versions.PekkoVersion}"
+    implementation "org.apache.pekko:pekko-http_${versions.ScalaBinary}"
+    implementation platform("org.apache.pekko:pekko-http-bom_${versions.ScalaBinary}:1.0.1")
+    implementation "org.apache.pekko:pekko-http-spray-json_${versions.ScalaBinary}"
+    implementation "org.apache.pekko:pekko-stream-testkit_${versions.ScalaBinary}:${versions.PekkoVersion}"
+    implementation "org.apache.pekko:pekko-http-testkit_${versions.ScalaBinary}"
+}
+
+scala {
+    zincVersion = "1.9.2"
+}
+
