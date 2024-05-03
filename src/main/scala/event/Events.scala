@@ -12,4 +12,15 @@ case class Events(private var events: Set[Event]) extends CheckEvents {
     }
     None
   }
+
+  override def deleteById(id: Int): Boolean = {
+    var result: Set[Event]= Set.empty
+    var foundEvent: Boolean = false
+    for (event <- events) {
+      if(event.getId == id) foundEvent = true
+      else result = result + event
+    }
+    if(foundEvent) events = result
+    foundEvent
+  }
 }

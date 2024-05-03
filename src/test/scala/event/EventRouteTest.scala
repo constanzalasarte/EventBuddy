@@ -62,8 +62,14 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
     }
   }
 
+  "get event1" in{
+    Get("/event/byId") ~> route ~> check {
+      responseAs[String] shouldEqual "/event/byId"
+    }
+  }
+
   "get event by id" in {
-    Get("/event?id=1") ~> route ~> check {
+    Get("/event/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
@@ -71,11 +77,26 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
       responseAs[Event].getDate shouldEqual date
       responseAs[Event].getId shouldEqual 1
     }
-    Get("/event?id=2") ~> route ~> check {
+    Get("/event/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "There is no event with id 2"
     }
-    Get("/event?id=hola") ~> route ~> check {
+    Get("/event/byId?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
+
+  "delete event by id" in {
+    Delete("/event/byId?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldEqual "Event deleted"
+    }
+    Delete("/event/byId?id=2") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no event with id 2"
+    }
+    Delete("/event/byId?id=hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
