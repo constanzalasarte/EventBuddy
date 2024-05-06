@@ -1,6 +1,7 @@
 package routes
 
 import event.Events
+import guest.Guests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
@@ -20,7 +21,8 @@ object PrincipalRoute extends ServerRoutes {
   def startRoutes(): Unit = {
     val users = Users(Set.empty)
     val events = Events(Set.empty)
-    val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(users, events))
+    val guests = Guests(Set.empty)
+    val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(users, events, guests))
     println(s"Server online\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture
