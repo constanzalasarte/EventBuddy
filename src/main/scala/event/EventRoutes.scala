@@ -59,15 +59,16 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
     )
   }
 
-  private def updateEvent(id: String, eventPatch: EventPatchRequest) = {
+  private def updateEvent(id: String, eventPatch: EventPatchRequest): Route = {
     try {
       val optEvent: Option[Event] = checkEvent(id.toInt)
-      if (optEvent.isEmpty) notFoundResponse(id)
-      else{
-        val event = updateEventVariables(eventPatch, optEvent)
-        events.changeEvent(id.toInt, event)
-        complete(StatusCodes.OK, event)
+      if (optEvent.isEmpty) return IDNotFoundResponse("event", id.toInt)
+      else if(eventPatch.hasCreatorId){
+        if(!userExist(eventPatch.creatorId.get)) return IDNotFoundResponse("user", eventPatch.creatorId.get)
       }
+      val event = updateEventVariables(eventPatch, optEvent)
+      events.changeEvent(id.toInt, event)
+      complete(StatusCodes.OK, event)
     }
     catch {
       case _: NumberFormatException =>
@@ -84,12 +85,11 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
     event
   }
 
-  private def getEventById(id: String) = {
+  private def getEventById(id: String): Route = {
     try {
       val event: Option[Event] = checkEvent(id.toInt)
-      if (event.isEmpty) notFoundResponse(id)
-      else
-        complete(StatusCodes.OK, event.get)
+      if (event.isEmpty) return IDNotFoundResponse("event", id.toInt)
+      complete(StatusCodes.OK, event.get)
     }
     catch {
       case _: NumberFormatException =>
@@ -97,11 +97,11 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
     }
   }
 
-  private def deleteEvent(id: String) = {
+  private def deleteEvent(id: String): Route = {
     try {
       val deleted: Boolean = events.deleteById(id.toInt)
-      if (!deleted) notFoundResponse(id)
-      else complete(StatusCodes.OK, s"Event deleted")
+      if (!deleted) return IDNotFoundResponse("event", id.toInt)
+      complete(StatusCodes.OK, s"Event deleted")
     }
     catch {
       case _: NumberFormatException =>
@@ -112,24 +112,20 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
   private def checkEvent(id: Int): Option[Event] =
     events.byId(id)
 
-  private def intExpectedResponse = {
-    complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
-  }
-
-  private def notFoundResponse(id: String) = {
-    complete(StatusCodes.NotFound, s"There is no event with id ${id.toInt}")
-  }
-
-  private def createEvent(eventRequest: EventRequest) = {
+  private def createEvent(eventRequest: EventRequest): Route = {
     if(!userExist(eventRequest.getCreatorId)) {
-      complete(StatusCodes.NotFound, s"There is no user with id ${eventRequest.getCreatorId}")
+      return IDNotFoundResponse("user", eventRequest.getCreatorId)
     }
-    else{
-      val event = eventRequest.getEvent
-      events.addEvent(event)
-      complete(StatusCodes.Created, event)
-    }
+    val event = eventRequest.getEvent
+    events.addEvent(event)
+    complete(StatusCodes.Created, event)
   }
 
   private def userExist(id: Int) = users.byID(id).isDefined
+
+  private def IDNotFoundResponse(name: String, id: Int) =
+    complete(StatusCodes.NotFound, s"There is no $name with id $id")
+
+  private def intExpectedResponse =
+    complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
 }

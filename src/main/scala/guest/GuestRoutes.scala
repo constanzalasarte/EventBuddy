@@ -42,12 +42,12 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
   private def updateGuestById(id: String, guestPatch: GuestPatchRequest): Route = {
     try{
       val maybeGuest: Option[Guest] = checkGuest(id.toInt)
-      if(maybeGuest.isEmpty) return notFoundResponse(id)
+      if(maybeGuest.isEmpty) return IDNotFoundResponse("guest", id.toInt)
       else if(guestPatch.hasUserId) {
-        if(userNotExists(guestPatch.userId.get)) return IDNotFoundResponse("user", guestPatch.userId)
+        if(userNotExists(guestPatch.userId.get)) return IDNotFoundResponse("user", guestPatch.userId.get)
       }
       else if(guestPatch.hasEventId)
-        if(eventNotExists(guestPatch.eventId.get)) return IDNotFoundResponse("event", guestPatch.eventId)
+        if(eventNotExists(guestPatch.eventId.get)) return IDNotFoundResponse("event", guestPatch.eventId.get)
       val guest: Guest = updateGuest(guestPatch, maybeGuest)
       guests.changeGuest(id.toInt, guest)
       complete(StatusCodes.OK, guest)
@@ -57,9 +57,6 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
         intExpectedResponse
     }
   }
-
-  private def IDNotFoundResponse(name: String, id: Option[Int]) =
-    complete(StatusCodes.NotFound, s"There is no $name with id ${id.get}")
 
   private def updateGuest(guestPatch: GuestPatchRequest, maybeGuest: Option[Guest]) = {
     val guest = maybeGuest.get
@@ -73,7 +70,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
   private def getGuestById(id: String) = {
     try{
       val guest: Option[Guest] = checkGuest(id.toInt)
-      if(guest.isEmpty) notFoundResponse(id)
+      if(guest.isEmpty) IDNotFoundResponse("guest", id.toInt)
       else complete(StatusCodes.OK, guest.get)
     }
     catch {
@@ -88,9 +85,9 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
 
   private def createGuest(guestRequest: GuestRequest) = {
    if(userNotExists(guestRequest.userId))
-     complete(StatusCodes.NotFound, s"There is no user with id ${guestRequest.userId}")
+     IDNotFoundResponse("user", guestRequest.userId)
    else if(eventNotExists(guestRequest.eventId))
-     complete(StatusCodes.NotFound, s"There is no event with id ${guestRequest.eventId}")
+     IDNotFoundResponse("event", guestRequest.eventId)
    else{
      val guest = guestRequest.getGuest
      guests.addGuest(guest)
@@ -105,9 +102,9 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
     events.byId(eventId).isEmpty
   }
 
-  private def notFoundResponse(id: String) =
-    complete(StatusCodes.NotFound, s"There is no guest with id ${id.toInt}")
-
   private def intExpectedResponse =
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+
+  private def IDNotFoundResponse(name: String, id: Int) =
+    complete(StatusCodes.NotFound, s"There is no $name with id $id")
 }

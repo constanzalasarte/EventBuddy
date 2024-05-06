@@ -108,6 +108,12 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
+
+    val eventWCreatorId = EventPatchRequest(None, None, Some(2), None)
+    Put("/event/byId?id=1", eventWCreatorId) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no user with id 2"
+    }
   }
 
   "delete event by id" in {
