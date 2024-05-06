@@ -6,6 +6,15 @@ case class Users(private var users: Set[User]) extends CheckUsers {
 
   def getUsers: Set[User] = users
 
+  def changeUser(id: Int, newUser: User): Unit = {
+    var result: Set[User]= Set.empty
+    for (user <- users) {
+      if(user.getId == id) result = result + newUser
+      else result = result + user
+    }
+    users = result
+  }
+
   override def byID(id: Int): Option[User] = {
     for (user <- users) {
       if(user.getId == id) return Some(user)

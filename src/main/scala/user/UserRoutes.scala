@@ -4,7 +4,7 @@ import event.CheckEvents
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onSuccess, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, extractRequest, get, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,26 +14,26 @@ case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtoco
   implicit val executionContext: ExecutionContext = system.executionContext
 
   def userRoute: Route =
-  concat(
-    path("byId"){
-      userByIdRoute
-    },
-    pathEnd{
-      concat(
-        get {
-          complete(StatusCodes.OK, users.getUsers)
-        },
-        post  {
-          entity(as[UserRequest]) { userRequest =>
-            val userSaved: Future[User] = createUser(userRequest)
-            onSuccess(userSaved) { _ =>
-              complete(StatusCodes.Created, userSaved)
+    concat(
+      path("byId"){
+        userByIdRoute
+      },
+      pathEnd{
+        concat(
+          get {
+            complete(StatusCodes.OK, users.getUsers)
+          },
+          post  {
+            entity(as[UserRequest]) { userRequest =>
+              val userSaved: Future[User] = createUser(userRequest)
+              onSuccess(userSaved) { _ =>
+                complete(StatusCodes.Created, userSaved)
+              }
             }
-          }
-        },
-      )
-    }
-  )
+          },
+        )
+      }
+    )
 
   private def userByIdRoute = {
     concat(
@@ -44,11 +44,14 @@ case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtoco
       },
       put {
         parameters("id") { id =>
-          complete("todo")
+          entity(as[UserPatchRequest]) { userPatchRequest =>
+            updateUserById(id, userPatchRequest)
+          }
         }
       },
       delete {
-        parameters("id") { id => {
+        parameters("id") { id =>
+        {
           deleteUser(id)
         }
         }
@@ -56,10 +59,26 @@ case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtoco
     )
   }
 
+  private def updateUserById(id: String, userPatch: UserPatchRequest) = {
+    try {
+      val optUser: Option[User] = checkUser(id.toInt)
+      if (optUser.isEmpty) notFoundResponse(id)
+      else {
+        val user: User = updateUserVariables(userPatch, optUser)
+        users.changeUser(id.toInt, user)
+        complete(StatusCodes.OK, user)
+      }
+    }
+    catch {
+      case _: NumberFormatException =>
+        IntExpectedResponse
+    }
+  }
+
   private def deleteUser(id: String) = {
     try {
       val user = checkUser(id.toInt)
-      if(user.isEmpty) complete(StatusCodes.NotFound, s"There is no user with id ${id.toInt}")
+      if(user.isEmpty) notFoundResponse(id)
       else{
         events.deleteByCreatorId(id.toInt)
         users.deleteById(id.toInt)
@@ -68,7 +87,7 @@ case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtoco
     }
     catch {
       case _: NumberFormatException =>
-        complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+        IntExpectedResponse
     }
   }
 
@@ -81,17 +100,31 @@ case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtoco
   private def getUserById(id: String) = {
     try {
       val user: Option[User] = checkUser(id.toInt)
-      if (user.isEmpty) complete(StatusCodes.NotFound, s"There is no user with id ${id.toInt}")
+      if (user.isEmpty) notFoundResponse(id)
       else
         complete(StatusCodes.OK, user.get)
     }
     catch {
       case _: NumberFormatException =>
-        complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+        IntExpectedResponse
     }
   }
 
   private def checkUser(id: Int): Option[User] =
     users.byID(id)
 
+  private def updateUserVariables(userPatch: UserPatchRequest, optUser: Option[User]) = {
+    val user = optUser.get
+    if (userPatch.hasUserName) user.changeUserName(userPatch.userName.get)
+    if (userPatch.hasEmail) user.changeEmail(userPatch.email.get)
+    user
+  }
+
+  private def IntExpectedResponse = {
+    complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+  }
+
+  private def notFoundResponse(id: String) = {
+    complete(StatusCodes.NotFound, s"There is no user with id ${id.toInt}")
+  }
 }

@@ -38,4 +38,13 @@ case class Events(private var events: Set[Event]) extends CheckEvents {
       deleteById(event.getId)
     }
   }
+
+  def changeEvent(id: Int, newEvent: Event) = {
+    var result: Set[Event]= Set.empty
+    for (event <- events) {
+      if(event.getId == id) result = result + newEvent
+      else result = result + event
+    }
+    events = result
+  }
 }

@@ -3,7 +3,7 @@ package event
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, extractRequest, get, onSuccess, parameters, path, pathEnd, post}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, extractRequest, get, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 import user.CheckUsers
 
@@ -61,35 +61,75 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
           deleteEvent(id)
         }
         }
+      },
+      put{
+        parameters("id"){id => {
+          entity(as[EventPatchRequest]){eventPatch =>
+            updateEvent(id, eventPatch)
+          }
+        }}
       }
     )
+  }
+
+  private def updateEvent(id: String, eventPatch: EventPatchRequest) = {
+    try {
+      val optEvent: Option[Event] = checkEvent(id.toInt)
+      if (optEvent.isEmpty) notFoundResponse(id)
+      else{
+        val event = updateEventVariables(eventPatch, optEvent)
+        events.changeEvent(id.toInt, event)
+        complete(StatusCodes.OK, event)
+      }
+    }
+    catch {
+      case _: NumberFormatException =>
+        intExpectedResponse
+    }
+  }
+
+  private def updateEventVariables(eventPatch: EventPatchRequest, optEvent: Option[Event]): Event = {
+    val event = optEvent.get
+    if (eventPatch.hasName) event.changeName(eventPatch.name.get)
+    if (eventPatch.hasDescription) event.changeDescription(eventPatch.description.get)
+    if (eventPatch.hasCreatorId) event.changeCreatorId(eventPatch.creatorId.get)
+    if (eventPatch.hasDate) event.changeDate(eventPatch.date.get)
+    event
   }
 
   private def getEventById(id: String) = {
     try {
       val event: Option[Event] = checkEvent(id.toInt)
-      if (event.isEmpty) complete(StatusCodes.NotFound, s"There is no event with id ${id.toInt}")
+      if (event.isEmpty) notFoundResponse(id)
       else
         complete(StatusCodes.OK, event.get)
     }
     catch {
       case _: NumberFormatException =>
-        complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+        intExpectedResponse
     }
   }
 
   private def deleteEvent(id: String) = {
     try {
       val deleted: Boolean = events.deleteById(id.toInt)
-      if (!deleted) complete(StatusCodes.NotFound, s"There is no event with id ${id.toInt}")
+      if (!deleted) notFoundResponse(id)
       else complete(StatusCodes.OK, s"Event deleted")
     }
     catch {
       case _: NumberFormatException =>
-        complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+        intExpectedResponse
     }
   }
 
   private def checkEvent(id: Int): Option[Event] =
     events.byId(id)
+
+  private def intExpectedResponse = {
+    complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+  }
+
+  private def notFoundResponse(id: String) = {
+    complete(StatusCodes.NotFound, s"There is no event with id ${id.toInt}")
+  }
 }

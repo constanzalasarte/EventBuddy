@@ -1,10 +1,13 @@
 package user
 
 
-case class User(private val email: String, private val userName: String, private val id: Int = User.getNewID) {
+case class User(private var email: String, private var userName: String, private val id: Int = User.getNewID) {
   def getEmail: String = email
 
   def getUserName: String = userName
+
+  def changeUserName(newUserName: String) = userName = newUserName
+  def changeEmail(newEmail: String) = email = newEmail
 
   def getId: Int = id
 
@@ -23,7 +26,10 @@ object User {
 }
 
 case class UserRequest(email: String, userName: String) {
-  def getEmail: String = email
-  def getUserName: String = userName
   def getUser: User = User(email, userName)
+}
+
+case class UserPatchRequest(email: Option[String], userName: Option[String]) {
+  def hasEmail: Boolean = email.isDefined
+  def hasUserName: Boolean = userName.isDefined
 }

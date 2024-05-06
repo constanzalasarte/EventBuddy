@@ -64,6 +64,25 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
     }
   }
 
+  "modify user by id" in {
+    val user = UserPatchRequest(Some("changedEmail@mail.com"), None)
+
+    Put("/user/byId?id=1", user) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[User].getEmail shouldEqual "changedEmail@mail.com"
+      responseAs[User].getUserName shouldEqual "userName"
+      responseAs[User].getId shouldEqual 1
+    }
+    Put("/user/byId?id=2", user) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no user with id 2"
+    }
+    Put("/user/byId?id=hola", user) ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
+
   "delete user by id" in {
     val event = EventRequest("event name", "event description", 1, date)
     Post("/event", event) ~> route ~> check {

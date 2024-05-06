@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import routes.PrincipalRoute
-import user.{User, UserJsonProtocol, UserRequest, Users}
+import user.{User, UserJsonProtocol, UserPatchRequest, UserRequest, Users}
 
 import java.time.Instant
 import java.util.Date
@@ -82,6 +82,27 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
       responseAs[String] shouldEqual "There is no event with id 2"
     }
     Get("/event/byId?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
+
+  "modify user by id" in {
+    val event = EventPatchRequest(Some("new event name"), Some("new event description"), None, None)
+
+    Put("/event/byId?id=1", event) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[Event].getName shouldEqual "new event name"
+      responseAs[Event].getDescription shouldEqual "new event description"
+      responseAs[Event].getCreatorId shouldEqual 1
+      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getId shouldEqual 1
+    }
+    Put("/event/byId?id=2", event) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no event with id 2"
+    }
+    Put("/event/byId?id=hola", event) ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
