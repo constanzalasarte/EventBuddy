@@ -10,7 +10,7 @@ trait ServerRoutes {
   def combinedRoutes(users: Users, events: Events, guests: Guests): Route = {
     val userRoutes = UserRoutes(users, events)
     val eventRoute = EventRoutes(events, users)
-    val guestRoute = GuestRoutes(guests)
+    val guestRoute = GuestRoutes(guests, events, users)
 
     Directives.concat(
       pathPrefix("event") {

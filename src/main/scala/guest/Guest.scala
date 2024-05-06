@@ -9,7 +9,11 @@ case class Guest(
   private val isHost: Boolean,
   private val id: Int = Guest.getNewID,
 ){
-
+  def getUserId: Int = userId
+  def getEventId: Int = eventId
+  def getConfirmationStatus: ConfirmationStatus = confirmationStatus
+  def getIsHost: Boolean = isHost
+  def getId: Int = id
 }
 
 private object Guest {
@@ -26,4 +30,13 @@ private object Guest {
 object ConfirmationStatus extends Enumeration{
   type ConfirmationStatus = Value
   val PENDING, ATTENDING, NOT_ATTENDING = Value
+}
+
+case class GuestRequest(
+   userId: Int,
+   eventId: Int,
+   confirmationStatus: ConfirmationStatus,
+   isHost: Boolean,
+){
+  def getGuest: Guest = Guest(userId, eventId, confirmationStatus, isHost)
 }
