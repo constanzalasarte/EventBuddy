@@ -1,5 +1,6 @@
 package routes
 
+import element.Elements
 import event.Events
 import guest.Guests
 import org.apache.pekko.actor.typed.ActorSystem
@@ -22,7 +23,8 @@ object PrincipalRoute extends ServerRoutes {
     val users = Users(Set.empty)
     val events = Events(Set.empty)
     val guests = Guests(Set.empty)
-    val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(users, events, guests))
+    val elements = Elements(Set.empty)
+    val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(users, events, guests, elements))
     println(s"Server online\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture

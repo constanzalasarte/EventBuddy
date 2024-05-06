@@ -2,12 +2,8 @@ classDiagram
     User <-- Element
     User <|-- Guest
     User <|-- Event
-    User <|-- Comment
-    User <|-- Review
     Event <|-- Element
     Event <|-- Guest
-    Event <|-- Comment
-    Event <|-- Review
 
     class User{
         id: Int
@@ -49,21 +45,4 @@ classDiagram
         eventId  Int
         maxUsers Int
         users    User[]
-    }
-
-    class Comment {
-        id        Int
-        userId    Int
-        eventId   Int
-        parentId  Int?
-        text      String
-        parent    Comment?
-        Comment   Comment[]
-    }
-
-    class Review {
-        id        Int
-        userId    Int
-        eventId   Int
-        rating    Int
     }

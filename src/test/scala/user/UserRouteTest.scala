@@ -1,5 +1,6 @@
 package user
 
+import element.Elements
 import event.{EventJsonProtocol, Events, UseEventRoute}
 import guest.{ConfirmationStatus, Guests, UseGuestRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -18,7 +19,8 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
   private val users = Users(Set.empty)
   private val events = Events(Set.empty)
   private val guests = Guests(Set.empty)
-  private val route = PrincipalRoute.combinedRoutes(users, events, guests)
+  private val elements = Elements(Set.empty)
+  private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
 
   private val guestRoute = UseGuestRoute(guests)
   private val eventRoute = UseEventRoute(events)

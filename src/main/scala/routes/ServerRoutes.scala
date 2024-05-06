@@ -1,5 +1,6 @@
 package routes
 
+import element.{ElementRoutes, Elements}
 import event.{EventRoutes, Events}
 import guest.{GuestRoutes, Guests}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
@@ -7,10 +8,11 @@ import org.apache.pekko.http.scaladsl.server.Directives.pathPrefix
 import user.{UserRoutes, Users}
 
 trait ServerRoutes {
-  def combinedRoutes(users: Users, events: Events, guests: Guests): Route = {
+  def combinedRoutes(users: Users, events: Events, guests: Guests, elements: Elements): Route = {
     val userRoutes = UserRoutes(users, events, guests)
     val eventRoute = EventRoutes(events, users, guests)
     val guestRoute = GuestRoutes(guests, events, users)
+    val elementRoute = ElementRoutes(elements, events)
 
     Directives.concat(
       pathPrefix("event") {
@@ -21,6 +23,9 @@ trait ServerRoutes {
       },
       pathPrefix("guest") {
         guestRoute.guestRoute
+      },
+      pathPrefix("element") {
+        elementRoute.elementRoute
       }
     )
   }

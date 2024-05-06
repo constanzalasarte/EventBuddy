@@ -1,5 +1,6 @@
 package guest
 
+import element.Elements
 import event.{Event, EventJsonProtocol, EventRequest, Events}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -16,7 +17,8 @@ class GuestRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
   private val users = Users(Set.empty)
   private val events = Events(Set.empty)
   private val guests = Guests(Set.empty)
-  private val route = PrincipalRoute.combinedRoutes(users, events, guests)
+  private val elements = Elements(Set.empty)
+  private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
 
   private val date = Date.from(Instant.now())
 
