@@ -1,18 +1,15 @@
 package guest
 
-import event.{Event, EventJsonProtocol, EventPatchRequest, EventRequest, Events}
+import event.{Event, EventJsonProtocol, EventRequest, Events}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import routes.PrincipalRoute
 import user.{User, UserJsonProtocol, UserRequest, Users}
 
 import java.time.Instant
 import java.util.Date
-import scala.concurrent.Await
 
 
 class GuestRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with GuestJsonProtocol with UserJsonProtocol with EventJsonProtocol{
@@ -117,6 +114,21 @@ class GuestRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
       responseAs[Guest].getConfirmationStatus shouldEqual ConfirmationStatus.ATTENDING
       responseAs[Guest].getIsHost shouldEqual false
       responseAs[Guest].getId shouldEqual 1
+    }
+  }
+
+  "delete guest by id" in {
+    Delete("/guest/byId?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldEqual "Guest deleted"
+    }
+    Delete("/guest/byId?id=2") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no guest with id 2"
+    }
+    Delete("/guest/byId?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
   }
 }

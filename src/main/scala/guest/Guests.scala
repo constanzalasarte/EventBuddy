@@ -23,5 +23,16 @@ case class Guests(private var guests: Set[Guest]) extends CheckGuests {
     }
     guests = result
   }
+
+  override def deleteById(id: Int): Boolean = {
+    var result: Set[Guest]= Set.empty
+    var foundEvent: Boolean = false
+    for (guest <- guests) {
+      if(guest.getId == id) foundEvent = true
+      else result = result + guest
+    }
+    if(foundEvent) guests = result
+    foundEvent
+  }
 }
 

@@ -3,7 +3,7 @@ package guest
 import event.CheckEvents
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, entity, get, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, parameters, path, pathEnd, post, put}
 import user.CheckUsers
 
 case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) extends GuestJsonProtocol {
@@ -34,10 +34,27 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
                 updateGuestById(id, guestPatchRequest)
               }
             }
-          }
+          },
+          delete{
+            parameters("id"){ id =>
+              deleteGuestById(id)
+            }
+          },
         )
       }
     )
+
+  private def deleteGuestById(id: String): Route = {
+    try{
+      val deleted: Boolean = guests.deleteById(id.toInt)
+      if (!deleted) return IDNotFoundResponse("guest", id.toInt)
+      complete(StatusCodes.OK, s"Guest deleted")
+    }
+    catch {
+      case _: NumberFormatException =>
+        intExpectedResponse
+    }
+  }
 
   private def updateGuestById(id: String, guestPatch: GuestPatchRequest): Route = {
     try{
