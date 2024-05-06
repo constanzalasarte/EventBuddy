@@ -1,5 +1,6 @@
 package event
 
+import guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -9,7 +10,7 @@ import user.CheckUsers
 
 import scala.concurrent.ExecutionContext
 
-case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProtocol {
+case class EventRoutes(events: Events, users: CheckUsers, guests: CheckGuests) extends EventJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext
 
@@ -101,6 +102,7 @@ case class EventRoutes(events: Events, users: CheckUsers) extends EventJsonProto
     try {
       val deleted: Boolean = events.deleteById(id.toInt)
       if (!deleted) return IDNotFoundResponse("event", id.toInt)
+      guests.deleteByEventId(id.toInt)
       complete(StatusCodes.OK, s"Event deleted")
     }
     catch {

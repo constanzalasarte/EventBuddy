@@ -32,11 +32,12 @@ case class Events(private var events: Set[Event]) extends CheckEvents {
     result
   }
 
-  override def deleteByCreatorId(id: Int): Unit = {
+  override def deleteByCreatorId(id: Int): Set[Event] = {
     val deleteEvents = byCreatorId(id)
     for (event <- deleteEvents) {
       deleteById(event.getId)
     }
+    deleteEvents
   }
 
   def changeEvent(id: Int, newEvent: Event): Unit = {
