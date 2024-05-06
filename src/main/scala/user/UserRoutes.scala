@@ -1,15 +1,16 @@
 package user
 
 import event.CheckEvents
+import guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, extractRequest, get, onSuccess, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtocol {
+case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests) extends UserJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext
 
@@ -80,7 +81,9 @@ case class UserRoutes(users: Users, events: CheckEvents) extends UserJsonProtoco
       val user = checkUser(id.toInt)
       if(user.isEmpty) notFoundResponse(id)
       else{
-        events.deleteByCreatorId(id.toInt)
+        guests.deleteByUserId(id.toInt)
+        val deletedEvents = events.deleteByCreatorId(id.toInt)
+        guests.deleteByEvents(deletedEvents)
         users.deleteById(id.toInt)
         complete(StatusCodes.OK, s"User deleted")
       }

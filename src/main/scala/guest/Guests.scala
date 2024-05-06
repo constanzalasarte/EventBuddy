@@ -34,5 +34,27 @@ case class Guests(private var guests: Set[Guest]) extends CheckGuests {
     if(foundEvent) guests = result
     foundEvent
   }
+
+  override def deleteByUserId(id: Int): Unit = {
+    var result: Set[Guest]= Set.empty
+    for (guest <- guests) {
+      if(guest.getUserId != id) result = result + guest
+    }
+    guests = result
+  }
+
+  override def deleteByEventId(id: Int): Unit ={
+    var result: Set[Guest]= Set.empty
+    for (guest <- guests) {
+      if(guest.getEventId != id) result = result + guest
+    }
+    guests = result
+  }
+
+  override def deleteByEvents(deletedEvents: Set[Event]): Unit = {
+    for (event <- deletedEvents) {
+      deleteById(event.getId)
+    }
+  }
 }
 

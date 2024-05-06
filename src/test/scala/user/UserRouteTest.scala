@@ -1,7 +1,7 @@
 package user
 
-import event.{Event, EventJsonProtocol, EventRequest, Events}
-import guest.Guests
+import event.{EventJsonProtocol, Events, UseEventRoute}
+import guest.{ConfirmationStatus, Guests, UseGuestRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
@@ -19,6 +19,9 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
   private val events = Events(Set.empty)
   private val guests = Guests(Set.empty)
   private val route = PrincipalRoute.combinedRoutes(users, events, guests)
+
+  private val guestRoute = UseGuestRoute(guests)
+  private val eventRoute = UseEventRoute(events)
 
   private val date = Date.from(Instant.now())
 
@@ -86,18 +89,13 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
   }
 
   "delete user by id" in {
-    val event = EventRequest("event name", "event description", 1, date)
-    Post("/event", event) ~> route ~> check {
-      status shouldEqual StatusCodes.Created
-      responseAs[Event].getName shouldEqual "event name"
-      responseAs[Event].getDescription shouldEqual "event description"
-      responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
-      responseAs[Event].getId shouldEqual 1
-    }
+    val event = eventRoute.createAEvent("name", "description", 1, date)
+    val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)
     Delete("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
+      guests.byId(guest.getId).isEmpty shouldEqual true
+      events.byId(event.getId).isEmpty shouldEqual true
     }
     Delete("/user/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
