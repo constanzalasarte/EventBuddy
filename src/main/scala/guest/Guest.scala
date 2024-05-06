@@ -3,10 +3,10 @@ package guest
 import guest.ConfirmationStatus.ConfirmationStatus
 
 case class Guest(
-  private val userId: Int,
-  private val eventId: Int,
-  private val confirmationStatus: ConfirmationStatus,
-  private val isHost: Boolean,
+  private var userId: Int,
+  private var eventId: Int,
+  private var confirmationStatus: ConfirmationStatus,
+  private var isHost: Boolean,
   private val id: Int = Guest.getNewID,
 ){
   def getUserId: Int = userId
@@ -14,6 +14,12 @@ case class Guest(
   def getConfirmationStatus: ConfirmationStatus = confirmationStatus
   def getIsHost: Boolean = isHost
   def getId: Int = id
+
+  def changeUserId(newUserId: Int): Unit = userId = newUserId
+  def changeEventId(newEventId: Int): Unit = eventId = newEventId
+  def changeConfirmationStatus(newConfirmationStatus: ConfirmationStatus): Unit =
+    confirmationStatus = newConfirmationStatus
+  def changeIsHost(newIsHost: Boolean): Unit = isHost = newIsHost
 }
 
 private object Guest {
@@ -39,4 +45,16 @@ case class GuestRequest(
    isHost: Boolean,
 ){
   def getGuest: Guest = Guest(userId, eventId, confirmationStatus, isHost)
+}
+
+case class GuestPatchRequest(
+  userId: Option[Int],
+  eventId: Option[Int],
+  confirmationStatus: Option[ConfirmationStatus],
+  isHost: Option[Boolean],
+){
+  def hasUserId: Boolean = userId.isDefined
+  def hasEventId: Boolean = eventId.isDefined
+  def hasConfirmationStatus: Boolean = confirmationStatus.isDefined
+  def hasIsHost: Boolean = isHost.isDefined
 }

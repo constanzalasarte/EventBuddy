@@ -39,7 +39,7 @@ case class Events(private var events: Set[Event]) extends CheckEvents {
     }
   }
 
-  def changeEvent(id: Int, newEvent: Event) = {
+  def changeEvent(id: Int, newEvent: Event): Unit = {
     var result: Set[Event]= Set.empty
     for (event <- events) {
       if(event.getId == id) result = result + newEvent
