@@ -28,6 +28,9 @@ class ElementRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest
 
   private val date = Date.from(Instant.now())
 
+  private val user = userRoute.createAUser("email", "name")
+  private val event = eventRoute.createAEvent("event name", "event description", user.getId, date)
+
   "get no elements" in {
     Get("/element") ~> route ~> check {
       status shouldEqual StatusCodes.OK
@@ -36,8 +39,6 @@ class ElementRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest
   }
 
   "create element" in {
-    val user = userRoute.createAUser("email", "name")
-    val event = eventRoute.createAEvent("event name", "event description", user.getId, date)
     val element = ElementRequest("name", 1, eventId = event.getId, maxUsers = 2, users = Set.empty)
     Post("/element", element) ~> route ~> check {
       status shouldEqual StatusCodes.Created
@@ -62,6 +63,60 @@ class ElementRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest
       val elementsSet = Await.result(json, 1.second)
       elementsSet shouldEqual elements.getElements
       elementsSet.size shouldEqual 1
+    }
+  }
+
+  "get element by id" in {
+    Get("/element/byId?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[Element].getName shouldEqual "name"
+      responseAs[Element].getEventId shouldEqual event.getId
+      responseAs[Element].getMaxUsers shouldEqual 2
+      responseAs[Element].getUsers shouldEqual Set.empty
+      responseAs[Element].getId shouldEqual 1
+    }
+    Get("/element/byId?id=2") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no element with id 2"
+    }
+    Get("/element/byId?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
+
+  "modify element by id" in {
+    val elementPatch = ElementPatchRequest(name = Some("new name"))
+    Put("/element/byId?id=1", elementPatch) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[Element].getName shouldEqual "new name"
+      responseAs[Element].getEventId shouldEqual event.getId
+      responseAs[Element].getMaxUsers shouldEqual 2
+      responseAs[Element].getUsers shouldEqual Set.empty
+      responseAs[Element].getId shouldEqual 1
+    }
+    Delete("/element/byId?id=2") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no element with id 2"
+    }
+    Delete("/element/byId?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
+
+  "delete element by id" in {
+    Delete("/element/byId?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldEqual "element deleted"
+    }
+    Delete("/element/byId?id=2") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no element with id 2"
+    }
+    Delete("/element/byId?id=hola") ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
   }
 }
