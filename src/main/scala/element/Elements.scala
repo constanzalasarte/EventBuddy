@@ -32,4 +32,15 @@ case class Elements(private var elements: Set[Element]) extends CheckElements{
     if(foundEvent) elements = result
     foundEvent
   }
+
+  override def deleteByEventId(id: Int): Unit = {
+    var result: Set[Element]= Set.empty
+    for (elem <- elements) {
+      if(elem.getEventId != id) result = result + elem
+    }
+    elements = result
+  }
+
+  override def deleteUserInUsers(id: Int): Unit =
+    elements.foreach(elem => elem.deleteUserInUsers(id))
 }

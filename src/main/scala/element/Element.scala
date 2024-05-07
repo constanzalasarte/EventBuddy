@@ -1,5 +1,7 @@
 package element
 
+import user.User
+
 import java.util.Date
 
 case class Element(
@@ -31,6 +33,14 @@ case class Element(
   def changeMaxUsers(newMaxUsers: Int): Unit = maxUsers = newMaxUsers
 
   def changeUsers(newUsers: Set[Int]): Unit = users = newUsers
+
+  def deleteUserInUsers(id: Int): Unit = {
+    var result: Set[Int] = Set.empty
+    for(user <- users){
+      if(user != id) result = result + user
+    }
+    users = result
+  }
 }
 
 private object Element {

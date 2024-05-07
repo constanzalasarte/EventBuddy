@@ -1,6 +1,6 @@
 package event
 
-import element.Elements
+import element.{Elements, UseElementRoute}
 import guest.{ConfirmationStatus, Guests, UseGuestRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -24,6 +24,7 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
   private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
 
   private val guestRoute = UseGuestRoute(guests)
+  private val elementRoute = UseElementRoute(elements)
 
   private val date = Date.from(Instant.now())
 
@@ -122,10 +123,12 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
 
   "delete event by id" in {
     val guest = guestRoute.createAGuest(1, 1, ConfirmationStatus.PENDING, isHost = false)
+    val element = elementRoute.createAElement("element name", 1, 1, 1, Set.empty)
     Delete("/event/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "Event deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
+      elements.byId(element.getId).isEmpty shouldEqual true
     }
     Delete("/event/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound

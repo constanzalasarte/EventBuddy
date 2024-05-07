@@ -1,5 +1,6 @@
 package event
 
+import element.CheckElements
 import guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -10,7 +11,7 @@ import user.CheckUsers
 
 import scala.concurrent.ExecutionContext
 
-case class EventRoutes(events: Events, users: CheckUsers, guests: CheckGuests) extends EventJsonProtocol {
+case class EventRoutes(events: Events, users: CheckUsers, guests: CheckGuests, elements: CheckElements) extends EventJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext
 
@@ -103,6 +104,7 @@ case class EventRoutes(events: Events, users: CheckUsers, guests: CheckGuests) e
       val deleted: Boolean = events.deleteById(id.toInt)
       if (!deleted) return IDNotFoundResponse("event", id.toInt)
       guests.deleteByEventId(id.toInt)
+      elements.deleteByEventId(id.toInt)
       complete(StatusCodes.OK, s"Event deleted")
     }
     catch {
