@@ -12,7 +12,7 @@ trait ServerRoutes {
     val userRoutes = UserRoutes(users, events, guests)
     val eventRoute = EventRoutes(events, users, guests)
     val guestRoute = GuestRoutes(guests, events, users)
-    val elementRoute = ElementRoutes(elements, events)
+    val elementRoute = ElementRoutes(elements, events, users)
 
     Directives.concat(
       pathPrefix("event") {

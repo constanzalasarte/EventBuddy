@@ -1,6 +1,6 @@
 package element
 
-import event.{Event, EventJsonProtocol, Events, UseEventRoute}
+import event.{EventJsonProtocol, Events, UseEventRoute}
 import guest.Guests
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -95,13 +95,45 @@ class ElementRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest
       responseAs[Element].getUsers shouldEqual Set.empty
       responseAs[Element].getId shouldEqual 1
     }
-    Delete("/element/byId?id=2") ~> route ~> check {
+    Put("/element/byId?id=2", elementPatch) ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "There is no element with id 2"
     }
-    Delete("/element/byId?id=hola") ~> route ~> check {
+    Put("/element/byId?id=hola", elementPatch) ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+  }
+
+  "update element by id with invalid arguments" in {
+    val elementPatchWEventId = ElementPatchRequest(eventId = Some(-1))
+    Put("/element/byId?id=1", elementPatchWEventId) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no event with id -1"
+    }
+    val elementPatchWUsersId = ElementPatchRequest(users = Some(Set(-1)))
+    Put("/element/byId?id=1", elementPatchWUsersId) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no user with id -1"
+    }
+
+    val elementPatchMaxUsers = ElementPatchRequest(maxUsers = Some(0), users = Some(Set(1)))
+    Put("/element/byId?id=1", elementPatchMaxUsers) ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Max users can not be greater than users size"
+    }
+  }
+
+  "create element by id with invalid arguments" in {
+    val element = ElementRequest("name", 1, eventId = event.getId, maxUsers = -1, users = Set.empty)
+    Post("/element", element) ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Max users can not be greater than users size"
+    }
+    val elementWUsers = ElementRequest("name", 1, eventId = event.getId, maxUsers = 1, users = Set(-1))
+    Post("/element", elementWUsers) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no user with id -1"
     }
   }
 
