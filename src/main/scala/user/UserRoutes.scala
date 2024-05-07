@@ -1,5 +1,6 @@
 package user
 
+import element.CheckElements
 import event.CheckEvents
 import guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
@@ -10,7 +11,7 @@ import org.apache.pekko.http.scaladsl.server.Route
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests) extends UserJsonProtocol {
+case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, elements: CheckElements) extends UserJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext
 
@@ -81,9 +82,7 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests) ex
       val user = checkUser(id.toInt)
       if(user.isEmpty) notFoundResponse(id)
       else{
-        guests.deleteByUserId(id.toInt)
-        val deletedEvents = events.deleteByCreatorId(id.toInt)
-        guests.deleteByEvents(deletedEvents)
+        deleteGuestsEventsAndElements(id.toInt)
         users.deleteById(id.toInt)
         complete(StatusCodes.OK, s"User deleted")
       }
@@ -92,6 +91,14 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests) ex
       case _: NumberFormatException =>
         IntExpectedResponse
     }
+  }
+
+  private def deleteGuestsEventsAndElements(id: Int): Unit = {
+    guests.deleteByUserId(id)
+    elements.deleteUserInUsers(id)
+    val deletedEvents = events.deleteByCreatorId(id)
+    guests.deleteByEvents(deletedEvents)
+    elements.deleteInEvents(deletedEvents)
   }
 
   private def createUser(userRequest: UserRequest): Future[User] = {

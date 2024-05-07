@@ -1,6 +1,6 @@
 package user
 
-import element.Elements
+import element.{Elements, UseElementRoute}
 import event.{EventJsonProtocol, Events, UseEventRoute}
 import guest.{ConfirmationStatus, Guests, UseGuestRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -24,6 +24,7 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
 
   private val guestRoute = UseGuestRoute(guests)
   private val eventRoute = UseEventRoute(events)
+  private val elementRoute = UseElementRoute(elements)
 
   private val date = Date.from(Instant.now())
 
@@ -93,11 +94,16 @@ class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest wi
   "delete user by id" in {
     val event = eventRoute.createAEvent("name", "description", 1, date)
     val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)
+    val element = elementRoute.createAElement("element name", 1, event.getId, 1, Set.empty)
+    val elementOfUser = elementRoute.createAElement("element name", 1, 30, 1, Set(1))
+
     Delete("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
       events.byId(event.getId).isEmpty shouldEqual true
+      elements.byId(element.getId).isEmpty shouldEqual true
+      elements.isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
     Delete("/user/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound

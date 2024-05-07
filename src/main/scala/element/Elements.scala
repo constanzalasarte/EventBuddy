@@ -1,4 +1,5 @@
 package element
+import event.Event
 
 case class Elements(private var elements: Set[Element]) extends CheckElements{
   def addElement(element: Element): Unit =
@@ -15,6 +16,11 @@ case class Elements(private var elements: Set[Element]) extends CheckElements{
     elements = result
   }
 
+  def isUserInUsers(idUser: Int, idElement: Int): Boolean = {
+    byId(idElement)
+      .exists(element => element.getUsers.contains(idUser))
+  }
+
   override def byId(id: Int): Option[Element] = {
     for(elem <- elements){
       if(elem.getId == id) return Some(elem)
@@ -23,14 +29,11 @@ case class Elements(private var elements: Set[Element]) extends CheckElements{
   }
 
   override def deleteById(id: Int): Boolean = {
-    var result: Set[Element]= Set.empty
-    var foundEvent: Boolean = false
-    for (elem <- elements) {
-      if(elem.getId == id) foundEvent = true
-      else result = result + elem
+    val maybeElement = elements.find(_.getId == id)
+    maybeElement.foreach { found =>
+      elements = elements - found
     }
-    if(foundEvent) elements = result
-    foundEvent
+    maybeElement.isDefined
   }
 
   override def deleteByEventId(id: Int): Unit = {
@@ -43,4 +46,10 @@ case class Elements(private var elements: Set[Element]) extends CheckElements{
 
   override def deleteUserInUsers(id: Int): Unit =
     elements.foreach(elem => elem.deleteUserInUsers(id))
+
+  override def deleteInEvents(deletedEvents: Set[Event]): Unit = {
+    for (event <- deletedEvents) {
+      deleteById(event.getId)
+    }
+  }
 }

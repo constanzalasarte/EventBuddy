@@ -9,7 +9,7 @@ import user.{UserRoutes, Users}
 
 trait ServerRoutes {
   def combinedRoutes(users: Users, events: Events, guests: Guests, elements: Elements): Route = {
-    val userRoutes = UserRoutes(users, events, guests)
+    val userRoutes = UserRoutes(users, events, guests, elements)
     val eventRoute = EventRoutes(events, users, guests, elements)
     val guestRoute = GuestRoutes(guests, events, users)
     val elementRoute = ElementRoutes(elements, events, users)

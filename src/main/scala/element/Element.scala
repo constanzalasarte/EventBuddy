@@ -1,9 +1,5 @@
 package element
 
-import user.User
-
-import java.util.Date
-
 case class Element(
              private var name: String,
              private var quantity: Int,
@@ -40,6 +36,13 @@ case class Element(
       if(user != id) result = result + user
     }
     users = result
+  }
+
+  def isUserInUsers(id: Int): Boolean = {
+    for(user <- getUsers){
+      if(user == id) return true
+    }
+    false
   }
 }
 

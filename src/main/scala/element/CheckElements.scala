@@ -7,4 +7,5 @@ trait CheckElements {
   def deleteById(id: Int): Boolean
   def deleteByEventId(id: Int): Unit
   def deleteUserInUsers(id: Int): Unit
+  def deleteInEvents(deletedEvents: Set[Event]): Unit
 }
