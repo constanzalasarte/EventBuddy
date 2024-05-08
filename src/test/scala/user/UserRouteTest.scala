@@ -1,6 +1,6 @@
 package user
 
-import element.{ElementService, UseElementRoute}
+import element.UseElementRoute
 import event.{EventJsonProtocol, Events, UseEventRoute}
 import guest.{ConfirmationStatus, Guests, UseGuestRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes

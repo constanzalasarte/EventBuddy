@@ -1,7 +1,7 @@
-package element
+package element.service
+import element.{CheckElements, Element, ElementPatchRequest, ElementRequest, Version}
 import element.repository.{ElementsRepository, ElementsSetRepo}
 import event.{CheckEvents, Event}
-import org.apache.pekko.http.scaladsl.server.Route
 import user.CheckUsers
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
@@ -12,15 +12,65 @@ object CreateElementService{
 }
 
 case class ElementService(private val repository: ElementsRepository, private val eventService: CheckEvents, userService: CheckUsers) extends CheckElements{
-  def addElement(elementRequest: ElementRequest): Element = {
-    checkEvent(elementRequest.eventId)
+  override def byId(id: Int): Option[Element] =
+    repository.byId(id)
 
-    checkUsersAndMaxUsers(elementRequest.users, elementRequest.maxUsers)
+  override def deleteById(id: Int): Boolean =
+    repository.deleteById(id)
+
+  override def deleteByEventId(id: Int): Unit = {
+    val elements = repository.getElements
+    for (elem <- elements) {
+      if(elem.getEventId == id) repository.deleteById(id)
+    }
+  }
+
+  override def deleteUserInUsers(id: Int): Unit =
+    repository.getElements.foreach(elem => elem.deleteUserInUsers(id))
+
+  override def deleteInEvents(deletedEvents: Set[Event]): Unit =
+    deletedEvents.foreach(event => deleteById(event.getId))
+
+  def addElement(elementRequest: ElementRequest): Element = {
+    checkRequestValues(elementRequest)
 
     val element = elementRequest.getElement
     repository.addElement(element)
     element
   }
+
+  def getElements: Set[Element] =
+    repository.getElements
+
+  def updateById(id: Int, elemPatch: ElementPatchRequest): Element = {
+    val element: Element = getElement(id)
+
+    checkPatchValues(elemPatch, element)
+
+    updateElement(elemPatch, element)
+
+    repository.changeById(id, element)
+
+    element
+  }
+
+  def isUserInUsers(idUser: Int, idElement: Int): Boolean = {
+    byId(idElement)
+      .exists(element => element.getUsers.contains(idUser))
+  }
+
+  private def getElement(id: Int) : Element = {
+    val maybeElement: Option[Element] = byId(id)
+    if (maybeElement.isEmpty) throw IDNotFoundException("element", id)
+    maybeElement.get
+  }
+
+  private def checkRequestValues(elementRequest: ElementRequest): Unit = {
+    checkEvent(elementRequest.eventId)
+
+    checkUsersAndMaxUsers(elementRequest.users, elementRequest.maxUsers)
+  }
+
 
   private def checkEvent(eventId: Int): Unit =
     if (!eventExist(eventId)) throw IDNotFoundException("event", eventId)
@@ -42,24 +92,7 @@ case class ElementService(private val repository: ElementsRepository, private va
 
   private def eventExist(id: Int): Boolean = eventService.byId(id).isDefined
 
-  private def unacceptableMaxUsers: String =
-    "Max users can not be greater than users size"
-
-  def getElements: Set[Element] =
-    repository.getElements
-
-  def updateById(id: Int, elemPatch: ElementPatchRequest): Element = {
-    val maybeElement: Option[Element] = byId(id)
-    if (maybeElement.isEmpty) throw IDNotFoundException("element", id)
-    checkPatchValues(elemPatch, maybeElement)
-
-    val element: Element = updateElement(elemPatch, maybeElement)
-    repository.changeById(id, element)
-    element
-  }
-
-  private def updateElement(elementPatch: ElementPatchRequest, maybeElement: Option[Element]) = {
-    val element = maybeElement.get
+  private def updateElement(elementPatch: ElementPatchRequest, element: Element) = {
     if (elementPatch.hasName) element.changeName(elementPatch.name.get)
     if (elementPatch.hasQty) element.changeQuantity(elementPatch.quantity.get)
     if (elementPatch.hasEventId) element.changeEventId(elementPatch.eventId.get)
@@ -68,44 +101,22 @@ case class ElementService(private val repository: ElementsRepository, private va
     element
   }
 
-  private def checkPatchValues(elementPatch: ElementPatchRequest, maybeElement: Option[Element]) = {
-    if (elementPatch.hasEventId) {
+  private def checkPatchValues(elementPatch: ElementPatchRequest, element: Element) = {
+    if (elementPatch.hasEventId)
       checkEvent(elementPatch.eventId.get)
-    }
     if (elementPatch.hasUsers) {
       checkUsers(elementPatch.users.get)
       if (elementPatch.hasMaxUsers)
         checkUsersAndMaxUsers(elementPatch.users.get, elementPatch.maxUsers.get)
     }
     if (elementPatch.hasMaxUsers)
-      if (checkUsersSize(elementPatch, maybeElement.get))
+      if (checkUsersSize(elementPatch, element))
         throw UnacceptableException(unacceptableMaxUsers)
     None
   }
   private def checkUsersSize(elementPatch: ElementPatchRequest, element: Element) : Boolean =
     element.getUsers.size > elementPatch.maxUsers.get
 
-  def isUserInUsers(idUser: Int, idElement: Int): Boolean = {
-    byId(idElement)
-      .exists(element => element.getUsers.contains(idUser))
-  }
-
-  override def byId(id: Int): Option[Element] =
-    repository.byId(id)
-
-  override def deleteById(id: Int): Boolean =
-    repository.deleteById(id)
-
-  override def deleteByEventId(id: Int): Unit = {
-    val elements = repository.getElements
-    for (elem <- elements) {
-      if(elem.getEventId == id) repository.deleteById(id)
-    }
-  }
-
-  override def deleteUserInUsers(id: Int): Unit =
-    repository.getElements.foreach(elem => elem.deleteUserInUsers(id))
-
-  override def deleteInEvents(deletedEvents: Set[Event]): Unit =
-    deletedEvents.foreach(event => deleteById(event.getId))
+  private def unacceptableMaxUsers: String =
+    "Max users can not be greater than users size"
 }

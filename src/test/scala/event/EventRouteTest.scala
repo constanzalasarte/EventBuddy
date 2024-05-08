@@ -1,6 +1,6 @@
 package event
 
-import element.{ElementService, UseElementRoute}
+import element.UseElementRoute
 import guest.{ConfirmationStatus, Guests, UseGuestRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest

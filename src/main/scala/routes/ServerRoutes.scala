@@ -1,6 +1,7 @@
 package routes
 
-import element.{ElementRoutes, ElementService}
+import element.service.ElementService
+import element.ElementRoutes
 import event.{EventRoutes, Events}
 import guest.{GuestRoutes, Guests}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}

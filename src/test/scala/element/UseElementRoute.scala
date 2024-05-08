@@ -1,5 +1,7 @@
 package element
 
+import element.service.ElementService
+
 case class UseElementRoute(elements: ElementService) {
   def createAElement(
                       name: String,

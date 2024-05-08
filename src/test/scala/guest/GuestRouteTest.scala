@@ -1,6 +1,5 @@
 package guest
 
-import element.ElementService
 import event.{Event, EventJsonProtocol, EventRequest, Events}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
