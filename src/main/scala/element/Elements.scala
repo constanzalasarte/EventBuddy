@@ -1,55 +1,43 @@
 package element
+import element.repository.{ElementsRepository, ElementsSetRepo}
 import event.Event
 
-case class Elements(private var elements: Set[Element]) extends CheckElements{
-  def addElement(element: Element): Unit =
-    elements = elements + element
-
-  def getElements: Set[Element] = elements
-
-  def changeById(id: Int, newElem: Element): Unit = {
-    var result: Set[Element]= Set.empty
-    for (elem <- elements) {
-      if(elem.getId == id) result = result + newElem
-      else result = result + elem
-    }
-    elements = result
+object CreateElements{
+  def createElements(version: Version): Elements = version match {
+    case Version.SetVersion => Elements(ElementsSetRepo(Set.empty))
   }
+}
+case class Elements(private var repository: ElementsRepository) extends CheckElements{
+  def addElement(element: Element): Unit =
+    repository.addElement(element)
+
+  def getElements: Set[Element] =
+    repository.getElements
+
+  def changeById(id: Int, newElem: Element): Unit =
+    repository.changeById(id, newElem)
 
   def isUserInUsers(idUser: Int, idElement: Int): Boolean = {
     byId(idElement)
       .exists(element => element.getUsers.contains(idUser))
   }
 
-  override def byId(id: Int): Option[Element] = {
-    for(elem <- elements){
-      if(elem.getId == id) return Some(elem)
-    }
-    None
-  }
+  override def byId(id: Int): Option[Element] =
+    repository.byId(id)
 
-  override def deleteById(id: Int): Boolean = {
-    val maybeElement = elements.find(_.getId == id)
-    maybeElement.foreach { found =>
-      elements = elements - found
-    }
-    maybeElement.isDefined
-  }
+  override def deleteById(id: Int): Boolean =
+    repository.deleteById(id)
 
   override def deleteByEventId(id: Int): Unit = {
-    var result: Set[Element]= Set.empty
+    val elements = repository.getElements
     for (elem <- elements) {
-      if(elem.getEventId != id) result = result + elem
+      if(elem.getEventId == id) repository.deleteById(id)
     }
-    elements = result
   }
 
   override def deleteUserInUsers(id: Int): Unit =
-    elements.foreach(elem => elem.deleteUserInUsers(id))
+    repository.getElements.foreach(elem => elem.deleteUserInUsers(id))
 
-  override def deleteInEvents(deletedEvents: Set[Event]): Unit = {
-    for (event <- deletedEvents) {
-      deleteById(event.getId)
-    }
-  }
+  override def deleteInEvents(deletedEvents: Set[Event]): Unit =
+    deletedEvents.foreach(event => deleteById(event.getId))
 }

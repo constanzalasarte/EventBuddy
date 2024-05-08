@@ -1,11 +1,13 @@
 package routes
 
-import element.Elements
+import element.{CreateElements, Elements}
+import element.Version.SetVersion
 import event.Events
 import guest.Guests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.server.Route
 import user.Users
 
 import scala.concurrent.ExecutionContext
@@ -19,11 +21,16 @@ object PrincipalRoute extends ServerRoutes {
   private val interface = config.getString("app.interface")
   private val port = config.getInt("app.port")
 
+  def setUpElements(): Elements ={
+    val createElem = CreateElements
+    createElem.createElements(SetVersion)
+  }
+
   def startRoutes(): Unit = {
     val users = Users(Set.empty)
     val events = Events(Set.empty)
     val guests = Guests(Set.empty)
-    val elements = Elements(Set.empty)
+    val elements = setUpElements()
     val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(users, events, guests, elements))
     println(s"Server online\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return

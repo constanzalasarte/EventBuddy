@@ -20,7 +20,7 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
   private val users = Users(Set.empty)
   private val events = Events(Set.empty)
   private val guests = Guests(Set.empty)
-  private val elements = Elements(Set.empty)
+  private val elements = PrincipalRoute.setUpElements()
   private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
 
   private val guestRoute = UseGuestRoute(guests)
