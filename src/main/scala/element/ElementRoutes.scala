@@ -57,57 +57,21 @@ case class ElementRoutes(elements: ElementService, events: CheckEvents, users: C
 
   private def updateElementById(id: String, elementPatch: ElementPatchRequest): Route = {
     try{
-      val maybeElement: Option[Element] = getElementByID(id.toInt)
-      if(maybeElement.isEmpty) return IDNotFoundResponse("element", id.toInt)
-      checkPatchValues(elementPatch, maybeElement) match {
-        case Some(toReturn) => return toReturn
-        case None =>
-      }
-
-      val element: Element = updateElement(elementPatch, maybeElement)
-      elements.changeById(id.toInt, element)
+      val element = elements.updateById(id.toInt, elementPatch)
       complete(StatusCodes.OK, element)
     }
     catch {
       case _: NumberFormatException => intExpectedResponse
+      case msg: IDNotFoundException =>
+        complete(StatusCodes.NotFound, msg.getMessage)
+      case msg: UnacceptableException =>
+        complete(StatusCodes.NotAcceptable, msg.getMessage)
     }
-  }
-
-  private def checkPatchValues(elementPatch: ElementPatchRequest, maybeElement: Option[Element]): Option[Route] = {
-    if (elementPatch.hasEventId) {
-      if (!eventExist(elementPatch.eventId.get))
-        return Some(IDNotFoundResponse("event", elementPatch.eventId.get))
-    }
-    if (elementPatch.hasUsers) {
-      checkUsers(elementPatch.users.get) match {
-        case Some(toReturn) => return Some(toReturn)
-        case None =>
-      }
-    }
-    if (elementPatch.hasMaxUsers) {
-      if (checkUsersPatchSize(elementPatch) || checkUsersSize(elementPatch, maybeElement.get))
-        return Some(unacceptableMaxUsers)
-    }
-    None
-  }
-
-  private def unacceptableMaxUsers = {
-    complete(StatusCodes.NotAcceptable, "Max users can not be greater than users size")
-  }
-
-  private def updateElement(elementPatch: ElementPatchRequest, maybeElement: Option[Element]) = {
-    val element = maybeElement.get
-    if (elementPatch.hasName) element.changeName(elementPatch.name.get)
-    if (elementPatch.hasQty) element.changeQuantity(elementPatch.quantity.get)
-    if (elementPatch.hasEventId) element.changeEventId(elementPatch.eventId.get)
-    if (elementPatch.hasUsers) element.changeUsers(elementPatch.users.get)
-    if (elementPatch.hasMaxUsers) element.changeMaxUsers(elementPatch.maxUsers.get)
-    element
   }
 
   private def getElementById(id: String): Route = {
     try{
-      val element: Option[Element] = getElementByID(id.toInt)
+      val element: Option[Element] = elements.byId(id.toInt)
       if(element.isEmpty) return IDNotFoundResponse("element", id.toInt)
       complete(StatusCodes.OK, element.get)
     }
@@ -140,32 +104,9 @@ case class ElementRoutes(elements: ElementService, events: CheckEvents, users: C
     }
   }
 
-  private def checkUsers(users: Set[Int]): Option[Route] = {
-    val id: Option[Int] = usersIdsThatNotExist(users)
-    if (id.isDefined) return Some(IDNotFoundResponse("user", id.get))
-    None
-  }
-
-  private def getElementByID(id: Int) : Option[Element] =
-    elements.byId(id)
-
-  private def eventExist(id: Int) = events.byId(id).isDefined
-
-  private def usersIdsThatNotExist(ids: Set[Int]) : Option[Int] =
-    ids.find(id => users.byID(id).isEmpty)
-
   private def IDNotFoundResponse(name: String, id: Int) =
     complete(StatusCodes.NotFound, s"There is no $name with id $id")
 
   private def intExpectedResponse =
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
-
-  private def checkUsersPatchSize(elementPatch: ElementPatchRequest) =
-    elementPatch.hasUsers && checkUsersSizeIsLessThanMaxUser(elementPatch)
-
-  private def checkUsersSizeIsLessThanMaxUser(elementPatch: ElementPatchRequest) =
-    elementPatch.users.get.size > elementPatch.maxUsers.get
-
-  private def checkUsersSize(elementPatch: ElementPatchRequest, element: Element) : Boolean =
-    element.getUsers.size > elementPatch.maxUsers.get
 }

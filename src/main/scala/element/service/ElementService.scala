@@ -1,6 +1,6 @@
 package element
 import element.repository.{ElementsRepository, ElementsSetRepo}
-import event.{CheckEvents, Event, Events}
+import event.{CheckEvents, Event}
 import org.apache.pekko.http.scaladsl.server.Route
 import user.CheckUsers
 import util.exceptions.{IDNotFoundException, UnacceptableException}
@@ -15,7 +15,7 @@ case class ElementService(private val repository: ElementsRepository, private va
   def addElement(elementRequest: ElementRequest): Element = {
     checkEvent(elementRequest.eventId)
 
-    checkUsersAndMaxUsers(elementRequest)
+    checkUsersAndMaxUsers(elementRequest.users, elementRequest.maxUsers)
 
     val element = elementRequest.getElement
     repository.addElement(element)
@@ -25,10 +25,10 @@ case class ElementService(private val repository: ElementsRepository, private va
   private def checkEvent(eventId: Int): Unit =
     if (!eventExist(eventId)) throw IDNotFoundException("event", eventId)
 
-  private def checkUsersAndMaxUsers(elementRequest: ElementRequest): Unit = {
-    checkUsers(elementRequest.users)
+  private def checkUsersAndMaxUsers(users: Set[Int], maxUsers: Int): Unit = {
+    checkUsers(users)
 
-    if (elementRequest.users.size > elementRequest.maxUsers)
+    if (users.size > maxUsers)
       throw UnacceptableException(unacceptableMaxUsers)
   }
 
@@ -48,8 +48,42 @@ case class ElementService(private val repository: ElementsRepository, private va
   def getElements: Set[Element] =
     repository.getElements
 
-  def changeById(id: Int, newElem: Element): Unit =
-    repository.changeById(id, newElem)
+  def updateById(id: Int, elemPatch: ElementPatchRequest): Element = {
+    val maybeElement: Option[Element] = byId(id)
+    if (maybeElement.isEmpty) throw IDNotFoundException("element", id)
+    checkPatchValues(elemPatch, maybeElement)
+
+    val element: Element = updateElement(elemPatch, maybeElement)
+    repository.changeById(id, element)
+    element
+  }
+
+  private def updateElement(elementPatch: ElementPatchRequest, maybeElement: Option[Element]) = {
+    val element = maybeElement.get
+    if (elementPatch.hasName) element.changeName(elementPatch.name.get)
+    if (elementPatch.hasQty) element.changeQuantity(elementPatch.quantity.get)
+    if (elementPatch.hasEventId) element.changeEventId(elementPatch.eventId.get)
+    if (elementPatch.hasUsers) element.changeUsers(elementPatch.users.get)
+    if (elementPatch.hasMaxUsers) element.changeMaxUsers(elementPatch.maxUsers.get)
+    element
+  }
+
+  private def checkPatchValues(elementPatch: ElementPatchRequest, maybeElement: Option[Element]) = {
+    if (elementPatch.hasEventId) {
+      checkEvent(elementPatch.eventId.get)
+    }
+    if (elementPatch.hasUsers) {
+      checkUsers(elementPatch.users.get)
+      if (elementPatch.hasMaxUsers)
+        checkUsersAndMaxUsers(elementPatch.users.get, elementPatch.maxUsers.get)
+    }
+    if (elementPatch.hasMaxUsers)
+      if (checkUsersSize(elementPatch, maybeElement.get))
+        throw UnacceptableException(unacceptableMaxUsers)
+    None
+  }
+  private def checkUsersSize(elementPatch: ElementPatchRequest, element: Element) : Boolean =
+    element.getUsers.size > elementPatch.maxUsers.get
 
   def isUserInUsers(idUser: Int, idElement: Int): Boolean = {
     byId(idElement)
