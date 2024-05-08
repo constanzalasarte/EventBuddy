@@ -7,10 +7,11 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 import user.CheckUsers
+import util.exceptions.{IDNotFoundException, UnacceptableException}
 
 import scala.concurrent.ExecutionContext
 
-case class ElementRoutes(elements: Elements, events: CheckEvents, users: CheckUsers) extends ElementJsonProtocol {
+case class ElementRoutes(elements: ElementService, events: CheckEvents, users: CheckUsers) extends ElementJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext
 
@@ -56,7 +57,7 @@ case class ElementRoutes(elements: Elements, events: CheckEvents, users: CheckUs
 
   private def updateElementById(id: String, elementPatch: ElementPatchRequest): Route = {
     try{
-      val maybeElement: Option[Element] = checkElement(id.toInt)
+      val maybeElement: Option[Element] = getElementByID(id.toInt)
       if(maybeElement.isEmpty) return IDNotFoundResponse("element", id.toInt)
       checkPatchValues(elementPatch, maybeElement) match {
         case Some(toReturn) => return toReturn
@@ -106,7 +107,7 @@ case class ElementRoutes(elements: Elements, events: CheckEvents, users: CheckUs
 
   private def getElementById(id: String): Route = {
     try{
-      val element: Option[Element] = checkElement(id.toInt)
+      val element: Option[Element] = getElementByID(id.toInt)
       if(element.isEmpty) return IDNotFoundResponse("element", id.toInt)
       complete(StatusCodes.OK, element.get)
     }
@@ -127,47 +128,32 @@ case class ElementRoutes(elements: Elements, events: CheckEvents, users: CheckUs
   }
 
   private def createElement(elementRequest: ElementRequest): Route = {
-    if(!eventExist(elementRequest.eventId)) {
-      return IDNotFoundResponse("event", elementRequest.eventId)
+    try {
+      val element = elements.addElement(elementRequest)
+      complete(StatusCodes.Created, element)
     }
-
-    checkUsersAndMaxUsers(elementRequest) match {
-      case Some(toReturn) => return toReturn
-      case None =>
+    catch {
+      case msg: IDNotFoundException =>
+        complete(StatusCodes.NotFound, msg.getMessage)
+      case msg: UnacceptableException =>
+        complete(StatusCodes.NotAcceptable, msg.getMessage)
     }
-
-    val element = elementRequest.getElement
-    elements.addElement(element)
-    complete(StatusCodes.Created, element)
-  }
-
-  private def checkUsersAndMaxUsers(elementRequest: ElementRequest): Option[Route] = {
-    checkUsers(elementRequest.users) match {
-      case Some(toReturn) => return Some(toReturn)
-      case None =>
-    }
-
-    if (elementRequest.users.size > elementRequest.maxUsers)
-      return Some(unacceptableMaxUsers)
-    None
   }
 
   private def checkUsers(users: Set[Int]): Option[Route] = {
-    val id: Option[Int] = usersExist(users)
+    val id: Option[Int] = usersIdsThatNotExist(users)
     if (id.isDefined) return Some(IDNotFoundResponse("user", id.get))
     None
   }
 
-  private def checkElement(id: Int) : Option[Element] =
+  private def getElementByID(id: Int) : Option[Element] =
     elements.byId(id)
 
   private def eventExist(id: Int) = events.byId(id).isDefined
 
-  private def usersExist(ids: Set[Int]) : Option[Int] = {
-    for(id <- ids)
-      if(users.byID(id).isEmpty) return Some(id)
-    None
-  }
+  private def usersIdsThatNotExist(ids: Set[Int]) : Option[Int] =
+    ids.find(id => users.byID(id).isEmpty)
+
   private def IDNotFoundResponse(name: String, id: Int) =
     complete(StatusCodes.NotFound, s"There is no $name with id $id")
 

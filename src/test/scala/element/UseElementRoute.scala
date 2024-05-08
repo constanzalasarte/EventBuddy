@@ -1,8 +1,6 @@
 package element
 
-import guest.ConfirmationStatus.ConfirmationStatus
-
-case class UseElementRoute(elements: Elements) {
+case class UseElementRoute(elements: ElementService) {
   def createAElement(
                       name: String,
                       quantity: Int,
@@ -10,8 +8,6 @@ case class UseElementRoute(elements: Elements) {
                       maxUsers: Int,
                       users: Set[Int]): Element = {
     val elementRequest = ElementRequest(name, quantity, eventId, maxUsers, users)
-    val element = elementRequest.getElement
-    elements.addElement(element)
-    element
+    elements.addElement(elementRequest)
   }
 }

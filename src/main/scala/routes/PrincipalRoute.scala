@@ -1,8 +1,8 @@
 package routes
 
-import element.{CreateElements, Elements}
+import element.{CreateElementService, ElementService}
 import element.Version.SetVersion
-import event.Events
+import event.{CheckEvents, Events}
 import guest.Guests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -21,17 +21,17 @@ object PrincipalRoute extends ServerRoutes {
   private val interface = config.getString("app.interface")
   private val port = config.getInt("app.port")
 
-  def setUpElements(): Elements ={
-    val createElem = CreateElements
-    createElem.createElements(SetVersion)
+  def setUpElements(eventService: CheckEvents, userService: Users): ElementService ={
+    val createElem = CreateElementService
+    createElem.createElementService(SetVersion, eventService, userService)
   }
 
   def startRoutes(): Unit = {
-    val users = Users(Set.empty)
-    val events = Events(Set.empty)
-    val guests = Guests(Set.empty)
-    val elements = setUpElements()
-    val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(users, events, guests, elements))
+    val userService = Users(Set.empty)
+    val eventService = Events(Set.empty)
+    val guestService = Guests(Set.empty)
+    val elementService = setUpElements(eventService, userService)
+    val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(userService, eventService, guestService, elementService))
     println(s"Server online\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture
