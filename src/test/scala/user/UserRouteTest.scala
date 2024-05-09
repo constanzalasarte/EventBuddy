@@ -1,8 +1,8 @@
 package user
 
 import element.UseElementRoute
-import event.{EventJsonProtocol, Events, UseEventRoute}
-import guest.{ConfirmationStatus, Guests, UseGuestRoute}
+import event.{EventJsonProtocol, UseEventRoute}
+import guest.{ConfirmationStatus, UseGuestRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
@@ -16,8 +16,8 @@ import java.util.Date
 import scala.concurrent.Await
 
 class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
-  private val users = Users(Set.empty)
-  private val events = Events(Set.empty)
+  private val users = PrincipalRoute.setUpUsers()
+  private val events = PrincipalRoute.setUpEvents()
   private val guests = PrincipalRoute.setUpGuests(events, users)
   private val elements = PrincipalRoute.setUpElements(events, users)
   private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)

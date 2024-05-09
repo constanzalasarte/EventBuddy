@@ -1,35 +1,30 @@
 package user
 
-case class Users(private var users: Set[User]) extends CheckUsers {
-  def addUser(user: User) : Unit =
-    users = users + user
+import user.repository.{SetUserRepo, UserRepository}
+import util.Version
 
-  def getUsers: Set[User] = users
+object UserServiceFactory{
+  def createService(version: Version): Users =
+    version match {
+      case Version.SetVersion => Users(SetUserRepo(Set.empty))
+    }
+}
+
+case class Users(private var repository: UserRepository) extends CheckUsers {
+  def addUser(user: User) : Unit =
+    repository.addUser(user)
+
+  def getUsers: Set[User] = repository.getUsers
 
   def changeUser(id: Int, newUser: User): Unit = {
-    var result: Set[User]= Set.empty
-    for (user <- users) {
-      if(user.getId == id) result = result + newUser
-      else result = result + user
-    }
-    users = result
+    repository.updateUser(id, newUser)
   }
 
   override def byID(id: Int): Option[User] = {
-    for (user <- users) {
-      if(user.getId == id) return Some(user)
-    }
-    None
+    repository.byID(id)
   }
 
   override def deleteById(id: Int): Boolean = {
-    var result: Set[User]= Set.empty
-    var foundUser: Boolean = false
-    for (user <- users) {
-      if(user.getId == id) foundUser = true
-      else result = result + user
-    }
-    if(foundUser) users = result
-    foundUser
+    repository.deleteById(id)
   }
 }

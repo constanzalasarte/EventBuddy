@@ -3,8 +3,7 @@ package element
 import element.controller.Element
 import element.controller.json.ElementJsonProtocol
 import element.controller.json.input.{ElementPatchRequest, ElementRequest}
-import event.{EventJsonProtocol, Events, UseEventRoute}
-import guest.Guests
+import event.{EventJsonProtocol, UseEventRoute}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
@@ -12,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import routes.PrincipalRoute
-import user.{UseUserRoute, UserJsonProtocol, Users}
+import user.{UseUserRoute, UserJsonProtocol}
 
 import java.time.Instant
 import java.util.Date
@@ -20,8 +19,8 @@ import scala.concurrent.Await
 
 
 class ElementRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with EventJsonProtocol with UserJsonProtocol with ElementJsonProtocol {
-  private val users = Users(Set.empty)
-  private val events = Events(Set.empty)
+  private val users = PrincipalRoute.setUpUsers()
+  private val events = PrincipalRoute.setUpEvents()
   private val guests = PrincipalRoute.setUpGuests(events, users)
   private val elements = PrincipalRoute.setUpElements(events, users)
   private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)

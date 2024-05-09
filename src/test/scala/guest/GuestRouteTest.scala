@@ -1,20 +1,20 @@
 package guest
 
-import event.{Event, EventJsonProtocol, EventRequest, Events}
+import event.{Event, EventJsonProtocol, EventRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import routes.PrincipalRoute
-import user.{User, UserJsonProtocol, UserRequest, Users}
+import user.{User, UserJsonProtocol, UserRequest}
 
 import java.time.Instant
 import java.util.Date
 
 
 class GuestRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with GuestJsonProtocol with UserJsonProtocol with EventJsonProtocol{
-  private val users = Users(Set.empty)
-  private val events = Events(Set.empty)
+  private val users = PrincipalRoute.setUpUsers()
+  private val events = PrincipalRoute.setUpEvents()
   private val guests = PrincipalRoute.setUpGuests(events, users)
   private val elements = PrincipalRoute.setUpElements(events, users)
   private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
