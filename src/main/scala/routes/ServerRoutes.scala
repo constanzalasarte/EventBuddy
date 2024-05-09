@@ -9,11 +9,11 @@ import org.apache.pekko.http.scaladsl.server.Directives.pathPrefix
 import user.{UserRoutes, Users}
 
 trait ServerRoutes {
-  def combinedRoutes(users: Users, events: Events, guests: Guests, elements: ElementService): Route = {
-    val userRoutes = UserRoutes(users, events, guests, elements)
-    val eventRoute = EventRoutes(events, users, guests, elements)
+  def combinedRoutes(users: Users, events: Events, guests: Guests, elementService: ElementService): Route = {
+    val userRoutes = UserRoutes(users, events, guests, elementService)
+    val eventRoute = EventRoutes(events, users, guests, elementService)
     val guestRoute = GuestRoutes(guests, events, users)
-    val elementRoute = ElementRoutes(elements, events, users)
+    val elementRoute = ElementRoutes(elementService)
 
     Directives.concat(
       pathPrefix("event") {

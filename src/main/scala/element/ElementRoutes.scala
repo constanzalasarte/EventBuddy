@@ -1,18 +1,16 @@
 package element
 
 import element.service.ElementService
-import event.CheckEvents
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
-import user.CheckUsers
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
 import scala.concurrent.ExecutionContext
 
-case class ElementRoutes(elements: ElementService, events: CheckEvents, users: CheckUsers) extends ElementJsonProtocol {
+case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext
 
@@ -21,7 +19,7 @@ case class ElementRoutes(elements: ElementService, events: CheckEvents, users: C
       pathEnd{
         concat(
           get {
-            complete(StatusCodes.OK, elements.getElements)
+            complete(StatusCodes.OK, service.getElements)
           },
           post {
             entity(as[ElementRequest]) { elementRequest =>
@@ -58,7 +56,7 @@ case class ElementRoutes(elements: ElementService, events: CheckEvents, users: C
 
   private def updateElementById(id: String, elementPatch: ElementPatchRequest): Route = {
     try{
-      val element = elements.updateById(id.toInt, elementPatch)
+      val element = service.updateById(id.toInt, elementPatch)
       complete(StatusCodes.OK, element)
     }
     catch {
@@ -72,7 +70,7 @@ case class ElementRoutes(elements: ElementService, events: CheckEvents, users: C
 
   private def getElementById(id: String): Route = {
     try{
-      val element: Option[Element] = elements.byId(id.toInt)
+      val element: Option[Element] = service.byId(id.toInt)
       if(element.isEmpty) return IDNotFoundResponse("element", id.toInt)
       complete(StatusCodes.OK, element.get)
     }
@@ -83,7 +81,7 @@ case class ElementRoutes(elements: ElementService, events: CheckEvents, users: C
 
   private def deleteElementById(id: String): Route = {
     try{
-      val deleted: Boolean = elements.deleteById(id.toInt)
+      val deleted: Boolean = service.deleteById(id.toInt)
       if(!deleted) return IDNotFoundResponse("element", id.toInt)
       complete(StatusCodes.OK, "element deleted")
     }
@@ -94,7 +92,7 @@ case class ElementRoutes(elements: ElementService, events: CheckEvents, users: C
 
   private def createElement(elementRequest: ElementRequest): Route = {
     try {
-      val element = elements.addElement(elementRequest)
+      val element = service.addElement(elementRequest)
       complete(StatusCodes.Created, element)
     }
     catch {

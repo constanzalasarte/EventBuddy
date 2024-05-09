@@ -11,7 +11,10 @@ object CreateElementService{
   }
 }
 
-case class ElementService(private val repository: ElementsRepository, private val eventService: CheckEvents, userService: CheckUsers) extends CheckElements{
+case class ElementService(
+                           private val repository: ElementsRepository,
+                           private val eventService: CheckEvents,
+                           private val userService: CheckUsers) extends CheckElements{
   override def byId(id: Int): Option[Element] =
     repository.byId(id)
 
