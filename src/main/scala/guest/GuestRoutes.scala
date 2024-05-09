@@ -5,6 +5,8 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, parameters, path, pathEnd, post, put}
 import user.CheckUsers
+import util.{Created, Error, Ok, Result}
+import util.exceptions.IDNotFoundException
 
 case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) extends GuestJsonProtocol {
   def guestRoute: Route =
@@ -58,30 +60,18 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
 
   private def updateGuestById(id: String, guestPatch: GuestPatchRequest): Route = {
     try{
-      val maybeGuest: Option[Guest] = checkGuest(id.toInt)
-      if(maybeGuest.isEmpty) return IDNotFoundResponse("guest", id.toInt)
-      else if(guestPatch.hasUserId) {
-        if(userNotExists(guestPatch.userId.get)) return IDNotFoundResponse("user", guestPatch.userId.get)
+      val result = guests.changeGuest(id.toInt, guestPatch)
+      result match {
+        case Ok(okResult) => complete(result.getStatusCode, okResult)
+        case Error(error) => complete(result.getStatusCode, error.getMessage)
       }
-      else if(guestPatch.hasEventId)
-        if(eventNotExists(guestPatch.eventId.get)) return IDNotFoundResponse("event", guestPatch.eventId.get)
-      val guest: Guest = updateGuest(guestPatch, maybeGuest)
-      guests.changeGuest(id.toInt, guest)
-      complete(StatusCodes.OK, guest)
     }
     catch {
       case _: NumberFormatException =>
         intExpectedResponse
+      case msg: IDNotFoundException =>
+        complete(StatusCodes.NotFound, msg.getMessage)
     }
-  }
-
-  private def updateGuest(guestPatch: GuestPatchRequest, maybeGuest: Option[Guest]) = {
-    val guest = maybeGuest.get
-    if (guestPatch.hasUserId) guest.changeUserId(guestPatch.userId.get)
-    if (guestPatch.hasEventId) guest.changeEventId(guestPatch.eventId.get)
-    if (guestPatch.hasConfirmationStatus) guest.changeConfirmationStatus(guestPatch.confirmationStatus.get)
-    if (guestPatch.hasIsHost) guest.changeIsHost(guestPatch.isHost.get)
-    guest
   }
 
   private def getGuestById(id: String) = {
@@ -101,20 +91,25 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
   }
 
   private def createGuest(guestRequest: GuestRequest) = {
-   if(userNotExists(guestRequest.userId))
-     IDNotFoundResponse("user", guestRequest.userId)
-   else if(eventNotExists(guestRequest.eventId))
-     IDNotFoundResponse("event", guestRequest.eventId)
-   else{
-     val guest = guestRequest.getGuest
-     guests.addGuest(guest)
-     complete(StatusCodes.Created, guest)
-   }
+    try {
+      else {
+        val result: Result[Guest] = guests.addGuest(guestRequest)
+        getResponse(result)
+      }
+    }
+    catch{
+      case msg: IDNotFoundException => complete(StatusCodes.NotFound, msg.getMessage)
+    }
   }
 
-  private def userNotExists(userId: Int): Boolean = {
-    users.byID(userId).isEmpty
+  private def getResponse(result: Result[Guest]) = {
+    result match {
+      case Error(error) => complete(result.getStatusCode, error.getMessage)
+      case Ok(ok) => complete(result.getStatusCode, ok)
+      case Created(created) => complete(result.getStatusCode, created)
+    }
   }
+
   private def eventNotExists(eventId: Int): Boolean = {
     events.byId(eventId).isEmpty
   }

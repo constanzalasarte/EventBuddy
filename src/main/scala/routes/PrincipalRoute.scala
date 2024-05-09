@@ -6,7 +6,7 @@ import guest.{GuestServiceFactory, Guests}
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
-import user.Users
+import user.{CheckUsers, Users}
 import util.Version.SetVersion
 
 import scala.concurrent.ExecutionContext
@@ -25,15 +25,15 @@ object PrincipalRoute extends ServerRoutes {
     createElem.createElementService(SetVersion, eventService, userService)
   }
 
-  def setUpGuests(): Guests ={
+  def setUpGuests(eventService: CheckEvents, userService: CheckUsers): Guests ={
     val guestFactory = GuestServiceFactory
-    guestFactory.createService(SetVersion)
+    guestFactory.createService(SetVersion, userService, eventService)
   }
 
   def startRoutes(): Unit = {
     val userService = Users(Set.empty)
     val eventService = Events(Set.empty)
-    val guestService = setUpGuests()
+    val guestService = setUpGuests(eventService, userService)
     val elementService = setUpElements(eventService, userService)
     val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(userService, eventService, guestService, elementService))
     println(s"Server online\nPress RETURN to stop...")

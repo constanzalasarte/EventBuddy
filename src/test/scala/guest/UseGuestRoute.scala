@@ -1,6 +1,8 @@
 package guest
 
 import guest.ConfirmationStatus.ConfirmationStatus
+import org.apache.pekko.actor.InvalidMessageException
+import util.{Created, Error, Ok}
 
 case class UseGuestRoute(guests: Guests) {
   def createAGuest(
@@ -10,8 +12,11 @@ case class UseGuestRoute(guests: Guests) {
                     isHost: Boolean,
                   ): Guest = {
     val guestRequest = GuestRequest(userId, eventId, confirmationStatus, isHost)
-    val guest = guestRequest.getGuest
-    guests.addGuest(guest)
-    guest
+    val result = guests.addGuest(guestRequest)
+    result match {
+      case Error(_) => throw InvalidMessageException("you are testing something that is already tested\nplease try to create a valid guest!")
+      case Ok(ok) => ok
+      case Created(created) => created
+    }
   }
 }

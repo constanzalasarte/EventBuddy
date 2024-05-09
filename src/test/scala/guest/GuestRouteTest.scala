@@ -15,7 +15,7 @@ import java.util.Date
 class GuestRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with GuestJsonProtocol with UserJsonProtocol with EventJsonProtocol{
   private val users = Users(Set.empty)
   private val events = Events(Set.empty)
-  private val guests = PrincipalRoute.setUpGuests()
+  private val guests = PrincipalRoute.setUpGuests(events, users)
   private val elements = PrincipalRoute.setUpElements(events, users)
   private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
 
