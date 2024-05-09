@@ -2,7 +2,7 @@ package routes
 
 import element.service.{CreateElementService, ElementService}
 import event.{CheckEvents, Events}
-import guest.Guests
+import guest.{GuestServiceFactory, Guests}
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
@@ -25,10 +25,15 @@ object PrincipalRoute extends ServerRoutes {
     createElem.createElementService(SetVersion, eventService, userService)
   }
 
+  def setUpGuests(): Guests ={
+    val guestFactory = GuestServiceFactory
+    guestFactory.createService(SetVersion)
+  }
+
   def startRoutes(): Unit = {
     val userService = Users(Set.empty)
     val eventService = Events(Set.empty)
-    val guestService = Guests(Set.empty)
+    val guestService = setUpGuests()
     val elementService = setUpElements(eventService, userService)
     val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(userService, eventService, guestService, elementService))
     println(s"Server online\nPress RETURN to stop...")

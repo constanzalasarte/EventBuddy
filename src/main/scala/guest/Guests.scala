@@ -1,60 +1,43 @@
 package guest
 
 import event.Event
+import guest.repository.{GuestRepository, SetGuestRepo}
+import util.Version
 
-case class Guests(private var guests: Set[Guest]) extends CheckGuests {
+object GuestServiceFactory{
+  def createService(version: Version): Guests =
+    version match {
+      case Version.SetVersion => Guests(SetGuestRepo(Set.empty))
+    }
+}
+
+case class Guests(private val repository: GuestRepository) extends CheckGuests {
   def addGuest(guest: Guest): Unit =
-    guests = guests + guest
+    repository.addGuest(guest)
 
-  def getGuests: Set[Guest] = guests
+  def getGuests: Set[Guest] = repository.getGuests
 
-  override def byId(id: Int): Option[Guest] = {
-    for (guest <- guests) {
-      if(guest.getId == id) return Some(guest)
-    }
-    None
-  }
+  override def byId(id: Int): Option[Guest] =
+    repository.byId(id)
 
-  def changeGuest(id: Int, newGuest: Guest): Unit = {
-    var result: Set[Guest]= Set.empty
-    for (guest <- guests) {
-      if(guest.getId == id) result = result + newGuest
-      else result = result + guest
-    }
-    guests = result
-  }
+  def changeGuest(id: Int, newGuest: Guest): Unit =
+    repository.changeGuestById(id, newGuest)
 
-  override def deleteById(id: Int): Boolean = {
-    var result: Set[Guest]= Set.empty
-    var foundEvent: Boolean = false
-    for (guest <- guests) {
-      if(guest.getId == id) foundEvent = true
-      else result = result + guest
-    }
-    if(foundEvent) guests = result
-    foundEvent
-  }
+  override def deleteById(id: Int): Boolean =
+    repository.deleteById(id)
 
-  override def deleteByUserId(id: Int): Unit = {
-    var result: Set[Guest]= Set.empty
-    for (guest <- guests) {
-      if(guest.getUserId != id) result = result + guest
-    }
-    guests = result
-  }
+  override def deleteByUserId(id: Int): Unit =
+    getGuests
+      .filter(guest => guest.getUserId == id)
+      .foreach(guest => deleteById(guest.getId))
 
-  override def deleteByEventId(id: Int): Unit ={
-    var result: Set[Guest]= Set.empty
-    for (guest <- guests) {
-      if(guest.getEventId != id) result = result + guest
-    }
-    guests = result
-  }
+  override def deleteByEventId(id: Int): Unit =
+    getGuests
+      .filter(guest => guest.getEventId == id)
+      .foreach(guest => deleteById(guest.getId))
 
-  override def deleteByEvents(deletedEvents: Set[Event]): Unit = {
-    for (event <- deletedEvents) {
-      deleteById(event.getId)
-    }
-  }
+  override def deleteByEvents(deletedEvents: Set[Event]): Unit =
+    deletedEvents
+      .foreach(event => deleteByEventId(event.getId))
 }
 

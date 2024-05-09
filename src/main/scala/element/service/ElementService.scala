@@ -8,9 +8,13 @@ import util.Version
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
 object CreateElementService{
-  def createElementService(version: Version, eventService: CheckEvents, userService: CheckUsers): ElementService = version match {
-    case Version.SetVersion => ElementService(ElementsSetRepo(Set.empty), eventService, userService)
-  }
+  def createElementService(
+                            version: Version,
+                            eventService: CheckEvents,
+                            userService: CheckUsers): ElementService =
+    version match {
+      case Version.SetVersion => ElementService(ElementsSetRepo(Set.empty), eventService, userService)
+    }
 }
 
 case class ElementService(
