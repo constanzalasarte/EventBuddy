@@ -1,6 +1,7 @@
-package element
+package element.controller
 
-import element.json.ElementJsonProtocol
+import element.controller.json.ElementJsonProtocol
+import element.controller.json.input.{ElementPatchRequest, ElementRequest}
 import element.service.ElementService
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -76,7 +77,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
   private def getElementById(id: String): Route = {
     try{
       val element: Option[Element] = service.byId(id.toInt)
-      if(element.isEmpty) return IDNotFoundResponse("element", id.toInt)
+      if(element.isEmpty) return elementIDNotFound(id.toInt)
       complete(StatusCodes.OK, element.get)
     }
     catch {
@@ -87,7 +88,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
   private def deleteElementById(id: String): Route = {
     try{
       val deleted: Boolean = service.deleteById(id.toInt)
-      if(!deleted) return IDNotFoundResponse("element", id.toInt)
+      if(!deleted) return elementIDNotFound(id.toInt)
       complete(StatusCodes.OK, "element deleted")
     }
     catch {
@@ -108,8 +109,8 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
     }
   }
 
-  private def IDNotFoundResponse(name: String, id: Int) =
-    complete(StatusCodes.NotFound, s"There is no $name with id $id")
+  private def elementIDNotFound(id: Int) =
+    complete(StatusCodes.NotFound, s"There is no element with id $id")
 
   private def intExpectedResponse =
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")

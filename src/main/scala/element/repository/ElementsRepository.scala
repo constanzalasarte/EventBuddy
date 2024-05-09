@@ -1,6 +1,6 @@
 package element.repository
 
-import element.Element
+import element.controller.Element
 
 trait ElementsRepository {
   def addElement(element: Element): Unit

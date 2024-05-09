@@ -1,5 +1,7 @@
 package element
 
+import element.controller.Element
+import element.controller.json.input.ElementRequest
 import element.service.ElementService
 
 case class UseElementRoute(elements: ElementService) {

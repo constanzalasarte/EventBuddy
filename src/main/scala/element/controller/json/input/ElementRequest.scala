@@ -1,6 +1,6 @@
-package element.json.input
+package element.controller.json.input
 
-import element.Element
+import element.controller.Element
 
 case class ElementRequest(
                            name: String,

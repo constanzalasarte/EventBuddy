@@ -1,4 +1,4 @@
-package element.json.input
+package element.controller.json.input
 
 case class ElementPatchRequest(
                                 name: Option[String] = None,

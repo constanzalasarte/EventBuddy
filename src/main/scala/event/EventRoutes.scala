@@ -1,6 +1,6 @@
 package event
 
-import element.CheckElements
+import element.service.CheckElements
 import guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors

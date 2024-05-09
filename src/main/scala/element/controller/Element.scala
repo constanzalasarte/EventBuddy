@@ -1,4 +1,4 @@
-package element
+package element.controller
 
 case class Element(
              private var name: String,
@@ -10,13 +10,11 @@ case class Element(
 {
   def getName: String = name
 
-  def getQuantity: Int = quantity
-
-  def getEventId: Int = eventId
-
   def getMaxUsers: Int = maxUsers
 
   def getId: Int = id
+
+  def getEventId: Int = eventId
 
   def getUsers: Set[Int] = users
 

@@ -1,6 +1,8 @@
 package element
 
-import element.json.ElementJsonProtocol
+import element.controller.Element
+import element.controller.json.ElementJsonProtocol
+import element.controller.json.input.{ElementPatchRequest, ElementRequest}
 import event.{EventJsonProtocol, Events, UseEventRoute}
 import guest.Guests
 import org.apache.pekko.http.scaladsl.model.StatusCodes

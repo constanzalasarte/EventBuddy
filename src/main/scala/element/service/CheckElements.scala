@@ -1,5 +1,6 @@
-package element
+package element.service
 
+import element.controller.Element
 import event.Event
 
 trait CheckElements {

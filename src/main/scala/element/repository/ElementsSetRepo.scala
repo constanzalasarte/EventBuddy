@@ -1,6 +1,7 @@
 package element.repository
 
-import element.Element
+import element.controller.Element
+
 
 case class ElementsSetRepo(private var elements: Set[Element]) extends ElementsRepository {
 

@@ -1,6 +1,7 @@
-package element.json
+package element.controller.json
 
-import element.{Element, ElementPatchRequest, ElementRequest}
+import element.controller.Element
+import element.controller.json.input.{ElementPatchRequest, ElementRequest}
 import org.apache.pekko.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 

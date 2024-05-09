@@ -1,8 +1,10 @@
 package element.service
-import element.{CheckElements, Element, ElementPatchRequest, ElementRequest, Version}
+import element.controller.Element
+import element.controller.json.input.{ElementPatchRequest, ElementRequest}
 import element.repository.{ElementsRepository, ElementsSetRepo}
 import event.{CheckEvents, Event}
 import user.CheckUsers
+import util.Version
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
 object CreateElementService{

@@ -1,6 +1,5 @@
 package routes
 
-import element.Version.SetVersion
 import element.service.{CreateElementService, ElementService}
 import event.{CheckEvents, Events}
 import guest.Guests
@@ -8,6 +7,7 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
 import user.Users
+import util.Version.SetVersion
 
 import scala.concurrent.ExecutionContext
 import scala.io.StdIn
