@@ -2,6 +2,8 @@ package guest
 
 import event.{CheckEvents, Event}
 import guest.repository.{GuestRepository, SetGuestRepo}
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives.complete
 import user.CheckUsers
 import util.{Created, Error, Ok, Result, Version}
 import util.exceptions.IDNotFoundException
@@ -73,8 +75,7 @@ case class Guests(private val repository: GuestRepository, private val userServi
     deletedEvents
       .foreach(event => deleteByEventId(event.getId))
 
-  private def userNotExists(userId: Int): Boolean = {
+  private def userNotExists(userId: Int): Boolean =
     userService.byID(userId).isEmpty
-  }
 }
 

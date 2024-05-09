@@ -61,10 +61,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
   private def updateGuestById(id: String, guestPatch: GuestPatchRequest): Route = {
     try{
       val result = guests.changeGuest(id.toInt, guestPatch)
-      result match {
-        case Ok(okResult) => complete(result.getStatusCode, okResult)
-        case Error(error) => complete(result.getStatusCode, error.getMessage)
-      }
+      getResponse(result)
     }
     catch {
       case _: NumberFormatException =>
@@ -76,7 +73,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
 
   private def getGuestById(id: String) = {
     try{
-      val guest: Option[Guest] = checkGuest(id.toInt)
+      val guest: Option[Guest] = guests.byId(id.toInt)
       if(guest.isEmpty) IDNotFoundResponse("guest", id.toInt)
       else complete(StatusCodes.OK, guest.get)
     }
@@ -86,20 +83,9 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
     }
   }
 
-  private def checkGuest(id: Int) = {
-    guests.byId(id)
-  }
-
   private def createGuest(guestRequest: GuestRequest) = {
-    try {
-      else {
-        val result: Result[Guest] = guests.addGuest(guestRequest)
-        getResponse(result)
-      }
-    }
-    catch{
-      case msg: IDNotFoundException => complete(StatusCodes.NotFound, msg.getMessage)
-    }
+    val result: Result[Guest] = guests.addGuest(guestRequest)
+    getResponse(result)
   }
 
   private def getResponse(result: Result[Guest]) = {
@@ -108,10 +94,6 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
       case Ok(ok) => complete(result.getStatusCode, ok)
       case Created(created) => complete(result.getStatusCode, created)
     }
-  }
-
-  private def eventNotExists(eventId: Int): Boolean = {
-    events.byId(eventId).isEmpty
   }
 
   private def intExpectedResponse =
