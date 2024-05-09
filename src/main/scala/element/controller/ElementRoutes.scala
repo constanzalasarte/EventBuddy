@@ -1,5 +1,6 @@
 package element
 
+import element.json.ElementJsonProtocol
 import element.service.ElementService
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -10,6 +11,10 @@ import util.exceptions.{IDNotFoundException, UnacceptableException}
 
 import scala.concurrent.ExecutionContext
 
+object ElementRouteFactory{
+  def create(service: ElementService): ElementRoutes =
+    ElementRoutes(service)
+}
 case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
   implicit val executionContext: ExecutionContext = system.executionContext

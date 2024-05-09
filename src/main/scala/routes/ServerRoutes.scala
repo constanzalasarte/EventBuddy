@@ -1,7 +1,7 @@
 package routes
 
 import element.service.ElementService
-import element.ElementRoutes
+import element.{ElementRouteFactory, ElementRoutes}
 import event.{EventRoutes, Events}
 import guest.{GuestRoutes, Guests}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
@@ -13,7 +13,7 @@ trait ServerRoutes {
     val userRoutes = UserRoutes(users, events, guests, elementService)
     val eventRoute = EventRoutes(events, users, guests, elementService)
     val guestRoute = GuestRoutes(guests, events, users)
-    val elementRoute = ElementRoutes(elementService)
+    val elementRoute = setUpElementRoutes(elementService)
 
     Directives.concat(
       pathPrefix("event") {
@@ -29,5 +29,10 @@ trait ServerRoutes {
         elementRoute.elementRoute
       }
     )
+  }
+
+  private def setUpElementRoutes(elementService: ElementService): ElementRoutes = {
+    val factory = ElementRouteFactory
+    factory.create(elementService)
   }
 }
