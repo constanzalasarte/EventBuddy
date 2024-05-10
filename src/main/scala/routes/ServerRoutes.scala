@@ -1,12 +1,12 @@
 package routes
 
-import element.controller.{ElementRouteFactory, ElementRoutes}
-import element.service.ElementService
-import event.{EventRoutes, Events}
-import guest.{GuestRoutes, Guests}
+import modules.element.controller.{ElementRouteFactory, ElementRoutes}
+import modules.element.service.ElementService
+import modules.event.{EventRoutes, Events}
+import modules.guest.{GuestRoutes, Guests}
+import modules.user.{UserRoutes, Users}
 import org.apache.pekko.http.scaladsl.server.{Directives, Route}
 import org.apache.pekko.http.scaladsl.server.Directives.pathPrefix
-import user.{UserRoutes, Users}
 
 trait ServerRoutes {
   def combinedRoutes(users: Users, events: Events, guests: Guests, elementService: ElementService): Route = {
@@ -16,16 +16,16 @@ trait ServerRoutes {
     val elementRoute = setUpElementRoutes(elementService)
 
     Directives.concat(
-      pathPrefix("event") {
+      pathPrefix("modules/event") {
         eventRoute.eventRoute
       },
-      pathPrefix("user") {
+      pathPrefix("modules/user") {
         userRoutes.userRoute
       },
-      pathPrefix("guest") {
+      pathPrefix("modules/guest") {
         guestRoute.guestRoute
       },
-      pathPrefix("element") {
+      pathPrefix("modules/element") {
         elementRoute.elementRoute
       }
     )

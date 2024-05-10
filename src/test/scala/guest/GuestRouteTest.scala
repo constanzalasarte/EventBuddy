@@ -1,23 +1,24 @@
 package guest
 
-import event.{Event, EventJsonProtocol, EventRequest}
+import modules.event.{Event, EventJsonProtocol, EventRequest}
+import modules.guest.{ConfirmationStatus, Guest, GuestJsonProtocol, GuestPatchRequest, GuestRequest}
+import modules.user.{User, UserJsonProtocol, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import routes.PrincipalRoute
-import user.{User, UserJsonProtocol, UserRequest}
+import server.Server
 
 import java.time.Instant
 import java.util.Date
 
 
 class GuestRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with GuestJsonProtocol with UserJsonProtocol with EventJsonProtocol{
-  private val users = PrincipalRoute.setUpUsers()
-  private val events = PrincipalRoute.setUpEvents()
-  private val guests = PrincipalRoute.setUpGuests(events, users)
-  private val elements = PrincipalRoute.setUpElements(events, users)
-  private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
+  private val users = Server.setUpUsers()
+  private val events = Server.setUpEvents()
+  private val guests = Server.setUpGuests(events, users)
+  private val elements = Server.setUpElements(events, users)
+  private val route = Server.combinedRoutes(users, events, guests, elements)
 
   private val date = Date.from(Instant.now())
 

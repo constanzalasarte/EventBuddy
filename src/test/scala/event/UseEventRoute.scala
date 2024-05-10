@@ -1,5 +1,7 @@
 package event
 
+import modules.event.{Event, EventRequest, Events}
+
 import java.util.Date
 
 case class UseEventRoute(events: Events) {

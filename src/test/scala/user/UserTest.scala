@@ -1,5 +1,6 @@
 package user
 
+import modules.user.User
 import org.scalatest.flatspec.AnyFlatSpec
 
 class UserTest extends AnyFlatSpec{

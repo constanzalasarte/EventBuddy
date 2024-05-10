@@ -1,6 +1,7 @@
 package guest
 
-import guest.ConfirmationStatus.ConfirmationStatus
+import modules.guest.ConfirmationStatus.ConfirmationStatus
+import modules.guest.{Guest, GuestRequest, Guests}
 import org.apache.pekko.actor.InvalidMessageException
 import util.{Created, Error, Ok}
 

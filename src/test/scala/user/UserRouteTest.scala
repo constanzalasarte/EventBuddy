@@ -1,26 +1,29 @@
 package user
 
 import element.UseElementRoute
-import event.{EventJsonProtocol, UseEventRoute}
-import guest.{ConfirmationStatus, UseGuestRoute}
+import event.UseEventRoute
+import guest.UseGuestRoute
+import modules.event.EventJsonProtocol
+import modules.guest.ConfirmationStatus
+import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
-import routes.PrincipalRoute
+import server.Server
 
 import java.time.Instant
 import java.util.Date
 import scala.concurrent.Await
 
 class UserRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
-  private val users = PrincipalRoute.setUpUsers()
-  private val events = PrincipalRoute.setUpEvents()
-  private val guests = PrincipalRoute.setUpGuests(events, users)
-  private val elements = PrincipalRoute.setUpElements(events, users)
-  private val route = PrincipalRoute.combinedRoutes(users, events, guests, elements)
+  private val users = Server.setUpUsers()
+  private val events = Server.setUpEvents()
+  private val guests = Server.setUpGuests(events, users)
+  private val elements = Server.setUpElements(events, users)
+  private val route = Server.combinedRoutes(users, events, guests, elements)
 
   private val guestRoute = UseGuestRoute(guests)
   private val eventRoute = UseEventRoute(events)

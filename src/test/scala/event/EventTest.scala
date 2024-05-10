@@ -1,5 +1,6 @@
 package event
 
+import modules.event.Event
 import org.apache.pekko.http.scaladsl.model.DateTime
 import org.scalatest.flatspec.AnyFlatSpec
 
