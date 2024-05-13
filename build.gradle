@@ -12,6 +12,18 @@ repositories {
     mavenCentral()
 }
 
+//jar {
+//    manifest {
+//        attributes "Main-Class": "server.Server"
+//    }
+//
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//
+//    from {
+//        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+//    }
+//}
+
 group = "com.example"
 description = "Event Buddy"
 
@@ -39,6 +51,10 @@ dependencies {
     implementation "org.apache.pekko:pekko-http-spray-json_${versions.ScalaBinary}"
     implementation "org.apache.pekko:pekko-stream-testkit_${versions.ScalaBinary}:${versions.PekkoVersion}"
     implementation "org.apache.pekko:pekko-http-testkit_${versions.ScalaBinary}"
+    implementation "com.typesafe.slick:slick_2.12:3.5.1"
+    implementation "org.slf4j:slf4j-api:1.7.25"
+    implementation "com.typesafe.slick:slick-hikaricp_2.12:3.5.1"
+    implementation "org.postgresql:postgresql:42.2.29"
 }
 
 scala {
