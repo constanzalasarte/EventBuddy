@@ -15,18 +15,20 @@ services:
 #      DB_HOST: eventBuddy_db
 #      DB_PORT: 5432
 
-  database:
-    container_name: eventBuddy_db
+  eventBuddy-db:
+    container_name: eventBuddy-db
     image: postgres:16
     ports:
       - 5432:5432
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - eventBuddyDB:/var/lib/postgresql/data
-      - ./db/init-scripts.sql:/docker-entrypoint-initdb.d/scripts.sql
+      - eventBuddy-db:/var/lib/postgresql/data
+#      - ./db/init-scripts.sql:/docker-entrypoint-initdb.d/scripts.sql
 volumes:
-  eventBuddyDB:
-    external: true
+  eventBuddy-db:
+#    external: true
