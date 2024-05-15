@@ -16,16 +16,16 @@ trait ServerRoutes {
     val elementRoute = setUpElementRoutes(elementService)
 
     Directives.concat(
-      pathPrefix("modules/event") {
+      pathPrefix("event") {
         eventRoute.eventRoute
       },
-      pathPrefix("modules/user") {
+      pathPrefix("user") {
         userRoutes.userRoute
       },
-      pathPrefix("modules/guest") {
+      pathPrefix("guest") {
         guestRoute.guestRoute
       },
-      pathPrefix("modules/element") {
+      pathPrefix("element") {
         elementRoute.elementRoute
       }
     )
