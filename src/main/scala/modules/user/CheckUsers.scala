@@ -1,6 +1,8 @@
 package modules.user
 
+import scala.concurrent.Future
+
 trait CheckUsers {
-  def byID(id: Int): Option[User]
-  def deleteById(id: Int): Boolean
+  def byID(id: Int): Future[Option[User]]
+  def deleteById(id: Int): Future[Boolean]
 }

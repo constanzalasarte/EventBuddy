@@ -4,9 +4,12 @@ import modules.element.controller.Element
 import modules.element.controller.json.input.{ElementPatchRequest, ElementRequest}
 import modules.element.repository.{ElementsRepository, ElementsSetRepo}
 import modules.event.{CheckEvents, Event}
-import modules.user.CheckUsers
+import modules.user.{CheckUsers, User}
+import server.Server.executionContext
 import util.Version
 import util.exceptions.{IDNotFoundException, UnacceptableException}
+
+import scala.util.{Failure, Success}
 
 object CreateElementService{
   def createElementService(
@@ -94,11 +97,24 @@ case class ElementService(
 
   private def checkUsers(users: Set[Int]): Unit = {
     val id: Option[Int] = idThatDoesntExist(users)
-    if (id.isDefined) throw IDNotFoundException("modules/user", id.get)
+    if (id.isDefined) throw IDNotFoundException("user", id.get)
   }
 
-  private def idThatDoesntExist(ids: Set[Int]) : Option[Int] =
-    ids.find(id => userService.byID(id).isEmpty)
+  private def idThatDoesntExist(ids: Set[Int]) : Option[Int] = {
+    ids.foreach(id => {
+      val result = checkUser(id)
+      if(result.isDefined) return result
+    })
+    None
+  }
+
+  private def checkUser(id: Int) : Option[Int] = {
+    val futureUser = userService.byID(id)
+    futureUser.foreach { value: Option[User] =>
+      if (value.isEmpty) return Some(id)
+    }
+    None
+  }
 
   private def eventExist(id: Int): Boolean = eventService.byId(id).isDefined
 

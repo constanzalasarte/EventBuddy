@@ -2,7 +2,7 @@ package modules.event
 
 import modules.element.service.CheckElements
 import modules.guest.CheckGuests
-import modules.user.CheckUsers
+import modules.user.{CheckUsers, User}
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -125,7 +125,12 @@ case class EventRoutes(events: Events, users: CheckUsers, guests: CheckGuests, e
     complete(StatusCodes.Created, event)
   }
 
-  private def userExist(id: Int) = users.byID(id).isDefined
+  private def userExist(id: Int): Boolean = {
+    users.byID(id).foreach{user: Option[User] => {
+      return user.isDefined
+    }}
+    false
+  }
 
   private def IDNotFoundResponse(name: String, id: Int) =
     complete(StatusCodes.NotFound, s"There is no $name with id $id")

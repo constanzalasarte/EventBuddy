@@ -2,7 +2,8 @@ package modules.guest
 
 import modules.event.{CheckEvents, Event}
 import modules.guest.repository.{GuestRepository, SetGuestRepo}
-import modules.user.CheckUsers
+import modules.user.{CheckUsers, User}
+import server.Server.executionContext
 import util.{Created, Error, Ok, Result, Version}
 import util.exceptions.IDNotFoundException
 
@@ -73,7 +74,11 @@ case class Guests(private val repository: GuestRepository, private val userServi
     deletedEvents
       .foreach(event => deleteByEventId(event.getId))
 
-  private def userNotExists(userId: Int): Boolean =
-    userService.byID(userId).isEmpty
+  private def userNotExists(userId: Int): Boolean = {
+    userService.byID(userId).foreach { user: Option[User] => {
+      return user.isEmpty
+    }}
+    true
+  }
 }
 
