@@ -6,16 +6,23 @@ import guest.UseGuestRoute
 import modules.event.EventJsonProtocol
 import modules.guest.ConfirmationStatus
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
+import modules.user.repository.UserTable
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import server.Server
+import slick.jdbc.JdbcBackend.Database
+import slick.jdbc.PostgresProfile.api._
+import slick.lifted.TableQuery
 
 import java.time.Instant
 import java.util.Date
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 
-class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
+class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
   private val users = Server.setUpUsers()
   private val events = Server.setUpEvents()
   private val guests = Server.setUpGuests(events, users)
@@ -27,6 +34,20 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
   private val elementRoute = UseElementRoute(elements)
 
   private val date = Date.from(Instant.now())
+
+  var db: Database = Database.forConfig("eventBuddy-db")
+
+  val userTable = TableQuery[UserTable]
+
+  override protected def beforeEach(): Unit = {
+    db = Database.forConfig("eventBuddy-db")
+    Await.result(db.run(userTable.schema.create), 2.seconds)
+  }
+
+  override protected def afterEach(): Unit = {
+    Await.result(db.run(userTable.schema.drop), 2.seconds)
+    db.close
+  }
 
   "get no users" in {
     Get("/user") ~> route ~> check {
@@ -44,28 +65,6 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
       responseAs[User].getId shouldEqual 1
     }
   }
-
-//  "get users" in {
-//    Get("/user") ~> route ~> check {
-//      status shouldEqual StatusCodes.OK
-//      val jsonString = responseAs[String]
-//      val json = Unmarshal(jsonString).to[Set[User]]
-//      val usersSet = Await.result(json, 1.second)
-//
-//      usersSet shouldEqual getUserSet()
-//    }
-//  }
-
-//  private def getUserSet(): Set[User] = {
-//    val futureSet: Future[Set[User]] = users.getUsers()
-//    Await.ready(futureSet, 1.second)
-//    for(userSet <- futureSet.value){
-//      userSet match {
-//        case Success(set) => return set
-//        case Failure(_) => return Set.empty
-//      }
-//    }
-//  }
 
   "get user by id" in {
     Get("/user/byId?id=1") ~> route ~> check {

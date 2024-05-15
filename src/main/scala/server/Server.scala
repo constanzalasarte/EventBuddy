@@ -3,12 +3,15 @@ package server
 import modules.element.service.{CreateElementService, ElementService}
 import modules.event.{CheckEvents, EventServiceFactory, Events}
 import modules.guest.{GuestServiceFactory, Guests}
+import modules.user.repository.UserTable
 import modules.user.{CheckUsers, UserServiceFactory, Users}
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
 import routes.ServerRoutes
-import util.Version.SetVersion
+import slick.jdbc.JdbcBackend.Database
+import slick.lifted.TableQuery
+import util.Version.{DBVersion, SetVersion}
 
 import scala.concurrent.ExecutionContext
 import scala.io.StdIn
@@ -34,6 +37,11 @@ object Server extends ServerRoutes {
   def setUpUsers(): Users = {
     val userFactory = UserServiceFactory
     userFactory.createService(SetVersion)
+  }
+
+  def setUpUsersDB(db: Database, userTable: TableQuery[UserTable]): Users = {
+    val userFactory = UserServiceFactory
+    userFactory.createService(DBVersion, Some(db), Some(userTable))
   }
 
   def setUpEvents(): Events = {

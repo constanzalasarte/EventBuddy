@@ -1,17 +1,18 @@
 package modules.user
 
-import modules.user.repository.{SetUserRepo, UserRepository, UserSlickRepo}
+import modules.user.repository.{SetUserRepo, UserRepository, UserSlickRepo, UserTable}
 import slick.jdbc.JdbcBackend.Database
+import slick.lifted.TableQuery
 import util.Version
 import util.Version.{DBVersion, SetVersion}
 
 import scala.concurrent.Future
 
 object UserServiceFactory{
-  def createService(version: Version, db: Option[Database]): Users =
+  def createService(version: Version, db: Option[Database] = None, userTable: Option[TableQuery[UserTable]] = None): Users =
     version match {
       case SetVersion => Users(SetUserRepo(Set.empty))
-      case DBVersion => Users(UserSlickRepo())
+      case DBVersion => Users(UserSlickRepo(userTable.get, db.get))
     }
 }
 

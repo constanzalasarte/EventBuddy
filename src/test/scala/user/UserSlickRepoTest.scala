@@ -17,8 +17,6 @@ class UserSlickRepoTest extends AsyncWordSpec with Matchers with BeforeAndAfterE
 
   val userTable = TableQuery[UserTable]
 
-  db.close
-
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
     Await.result(db.run(userTable.schema.create), 2.seconds)
