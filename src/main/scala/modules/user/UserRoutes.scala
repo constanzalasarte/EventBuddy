@@ -6,10 +6,11 @@ import modules.guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onSuccess, parameters, path, pathEnd, post, put}
-import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, extractRequest, get, onComplete, onSuccess, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.{Route, StandardRoute}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, elements: CheckElements) extends UserJsonProtocol {
   implicit val system: ActorSystem[_] = ActorSystem(Behaviors.empty, "SprayExample")
@@ -23,7 +24,7 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
       pathEnd{
         concat(
           get {
-            complete(StatusCodes.OK, users.getUsers)
+            getUsers()
           },
           post  {
             entity(as[UserRequest]) { userRequest =>
@@ -61,44 +62,32 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
     )
   }
 
+  private def getUsers(): Route = {
+    val futureSet: Future[Set[User]] = users.getUsers()
+    onComplete(futureSet) {
+      case Success(userSet) => complete(StatusCodes.OK, userSet)
+      case Failure(_) => complete(StatusCodes.NoContent, "There is a failure getting the user set")
+    }
+  }
+
   private def updateUserById(id: String, userPatch: UserPatchRequest) = {
-    try {
-      val optUser: Option[User] = checkUser(id.toInt)
-      if (optUser.isEmpty) notFoundResponse(id)
-      else {
-        val user: User = updateUserVariables(userPatch, optUser)
-        users.changeUser(id.toInt, user)
-        complete(StatusCodes.OK, user)
-      }
+    val inCaseUserExist = (optUser: Option[User]) => {
+      val user: User = updateUserVariables(userPatch, optUser)
+      users.changeUser(id.toInt, user)
+      complete(StatusCodes.OK, user)
     }
-    catch {
-      case _: NumberFormatException =>
-        IntExpectedResponse
-    }
+    checkIfUserExist(id, inCaseUserExist)
   }
 
-  private def deleteUser(id: String) = {
-    try {
-      val user = checkUser(id.toInt)
-      if(user.isEmpty) notFoundResponse(id)
-      else{
-        deleteGuestsEventsAndElements(id.toInt)
-        users.deleteById(id.toInt)
-        complete(StatusCodes.OK, s"User deleted")
+  private def deleteUser(id: String): Route = {
+    val inCaseUserExist = (_: Option[User]) => {
+      deleteGuestsEventsAndElements(id.toInt)
+      val deleteById : Future[Boolean] = users.deleteById(id.toInt)
+      onSuccess(deleteById) { _ =>
+        complete(StatusCodes.OK, "User deleted")
       }
     }
-    catch {
-      case _: NumberFormatException =>
-        IntExpectedResponse
-    }
-  }
-
-  private def deleteGuestsEventsAndElements(id: Int): Unit = {
-    guests.deleteByUserId(id)
-    elements.deleteUserInUsers(id)
-    val deletedEvents = events.deleteByCreatorId(id)
-    guests.deleteByEvents(deletedEvents)
-    elements.deleteInEvents(deletedEvents)
+    checkIfUserExist(id, inCaseUserExist)
   }
 
   private def createUser(userRequest: UserRequest): Future[User] = {
@@ -108,11 +97,22 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
   }
 
   private def getUserById(id: String) = {
+    val inCaseUserExist = (user: Option[User]) => complete(StatusCodes.OK, user.get)
+
+    checkIfUserExist(id, inCaseUserExist)
+  }
+
+  private def checkIfUserExist(id: String, inCaseUserExist: Option[User] => Route) = {
     try {
-      val user: Option[User] = checkUser(id.toInt)
-      if (user.isEmpty) notFoundResponse(id)
-      else
-        complete(StatusCodes.OK, user.get)
+      val futureUser: Future[Option[User]] = checkUser(id.toInt)
+      onComplete(futureUser) {
+        case Success(optUser) =>
+          if (optUser.isEmpty) notFoundResponse(id)
+          else {
+            inCaseUserExist(optUser)
+          }
+        case Failure(_) => notFoundResponse(id)
+      }
     }
     catch {
       case _: NumberFormatException =>
@@ -120,7 +120,16 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
     }
   }
 
-  private def checkUser(id: Int): Option[User] =
+
+  private def deleteGuestsEventsAndElements(id: Int): Unit = {
+    guests.deleteByUserId(id)
+    elements.deleteUserInUsers(id)
+    val deletedEvents = events.deleteByCreatorId(id)
+    guests.deleteByEvents(deletedEvents)
+    elements.deleteInEvents(deletedEvents)
+  }
+
+  private def checkUser(id: Int): Future[Option[User]] =
     users.byID(id)
 
   private def updateUserVariables(userPatch: UserPatchRequest, optUser: Option[User]) = {
