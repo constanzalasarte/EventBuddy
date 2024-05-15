@@ -9,8 +9,6 @@ case class User(private var email: String, private var userName: String, private
   def changeEmail(newEmail: String) = email = newEmail
 
   def getId: Int = id
-
-  override def toString: String = s"User(id: $id, email: $email, userName: $userName)"
 }
 
 object User {
