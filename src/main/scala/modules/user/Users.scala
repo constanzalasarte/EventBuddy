@@ -1,30 +1,35 @@
 package modules.user
 
-import modules.user.repository.{SetUserRepo, UserRepository}
+import modules.user.repository.{SetUserRepo, UserRepository, UserSlickRepo}
+import slick.jdbc.JdbcBackend.Database
 import util.Version
+import util.Version.{DBVersion, SetVersion}
+
+import scala.concurrent.Future
 
 object UserServiceFactory{
-  def createService(version: Version): Users =
+  def createService(version: Version, db: Option[Database]): Users =
     version match {
-      case Version.SetVersion => Users(SetUserRepo(Set.empty))
+      case SetVersion => Users(SetUserRepo(Set.empty))
+      case DBVersion => Users(UserSlickRepo())
     }
 }
 
 case class Users(private var repository: UserRepository) extends CheckUsers {
-  def addUser(user: User) : Unit =
+  def addUser(user: User) : Future[Unit] =
     repository.addUser(user)
 
-  def getUsers: Set[User] = repository.getUsers
+  def getUsers(): Future[Set[User]] =
+    repository.getUsers()
 
-  def changeUser(id: Int, newUser: User): Unit = {
+  def changeUser(id: Int, newUser: User): Future[Unit] = {
     repository.updateUser(id, newUser)
   }
 
-  override def byID(id: Int): Option[User] = {
+  override def byID(id: Int): Future[Option[User]] =
     repository.byID(id)
-  }
 
-  override def deleteById(id: Int): Boolean = {
+  override def deleteById(id: Int): Future[Boolean] = {
     repository.deleteById(id)
   }
 }
