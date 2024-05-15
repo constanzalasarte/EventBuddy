@@ -12,7 +12,7 @@ case class SetUserRepo(private var users: Set[User]) extends UserRepository {
     Future{}
   }
 
-  override def getUsers: Future[Set[User]] = Future{users}
+  override def getUsers(): Future[Set[User]] = Future{users}
 
   override def updateUser(id: Int, newUser: User): Future[Unit] = {
     var result: Set[User]= Set.empty
