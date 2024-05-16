@@ -1,21 +1,19 @@
 package user
 
 import modules.user.User
-import modules.user.repository.{UserSlickRepo, UserTable}
+import modules.user.repository.UserSlickRepo
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.PostgresProfile.api._
-import slick.lifted.TableQuery
+import util.DBTables.userTable
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class UserSlickRepoTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach{
   var db: Database = Database.forConfig("eventBuddy-db")
-
-  val userTable = TableQuery[UserTable]
 
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
@@ -28,7 +26,7 @@ class UserSlickRepoTest extends AsyncWordSpec with Matchers with BeforeAndAfterE
   }
 
   "get no users with slick" in {
-    val slickRepo = UserSlickRepo(userTable, db)
+    val slickRepo = UserSlickRepo(db)
     val set = slickRepo.getUsers()
     set.map { x: Set[User] =>
       x should have size 0
@@ -45,7 +43,7 @@ class UserSlickRepoTest extends AsyncWordSpec with Matchers with BeforeAndAfterE
   }
 
   "add user with slick" in {
-    val slickRepo = UserSlickRepo(userTable, db)
+    val slickRepo = UserSlickRepo(db)
     slickRepo.addUser(User("email@test.com", "userName", 10))
     slickRepo.addUser(User("email2@test.com", "userName", 10))
     slickRepo.addUser(User("email3@test.com", "userName", 10))

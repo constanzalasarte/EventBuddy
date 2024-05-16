@@ -6,7 +6,6 @@ import guest.UseGuestRoute
 import modules.event.EventJsonProtocol
 import modules.guest.ConfirmationStatus
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
-import modules.user.repository.UserTable
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.BeforeAndAfterEach
@@ -14,16 +13,17 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import server.Server
 import slick.jdbc.JdbcBackend.Database
-import slick.jdbc.PostgresProfile.api._
-import slick.lifted.TableQuery
+import util.DBTables.userTable
 
 import java.time.Instant
 import java.util.Date
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
+import slick.jdbc.PostgresProfile.api._
+
 class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
-  private val users = Server.setUpUsers()
+  private var users = Server.setUpUsers()
   private val events = Server.setUpEvents()
   private val guests = Server.setUpGuests(events, users)
   private val elements = Server.setUpElements(events, users)
@@ -35,13 +35,12 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
 
   private val date = Date.from(Instant.now())
 
-  var db: Database = Database.forConfig("eventBuddy-db")
-
-  val userTable = TableQuery[UserTable]
+  var db: Database = _
 
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
     Await.result(db.run(userTable.schema.create), 2.seconds)
+    users = Server.setUpUsersDB(db)
   }
 
   override protected def afterEach(): Unit = {
@@ -124,6 +123,10 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
     Delete("/user/byId?id=hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+    Get("/user/byId?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no user with id 1"
     }
   }
 }
