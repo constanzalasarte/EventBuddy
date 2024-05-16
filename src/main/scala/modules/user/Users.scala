@@ -1,18 +1,17 @@
 package modules.user
 
-import modules.user.repository.{SetUserRepo, UserRepository, UserSlickRepo, UserTable}
+import modules.user.repository.{SetUserRepo, UserRepository, UserSlickRepo}
 import slick.jdbc.JdbcBackend.Database
-import slick.lifted.TableQuery
 import util.Version
 import util.Version.{DBVersion, SetVersion}
 
 import scala.concurrent.Future
 
 object UserServiceFactory{
-  def createService(version: Version, db: Option[Database] = None, userTable: Option[TableQuery[UserTable]] = None): Users =
+  def createService(version: Version, db: Option[Database] = None): Users =
     version match {
       case SetVersion => Users(SetUserRepo(Set.empty))
-      case DBVersion => Users(UserSlickRepo(userTable.get, db.get))
+      case DBVersion => Users(UserSlickRepo(db.get))
     }
 }
 
@@ -30,7 +29,7 @@ case class Users(private var repository: UserRepository) extends CheckUsers {
   override def byID(id: Int): Future[Option[User]] =
     repository.byID(id)
 
-  override def deleteById(id: Int): Future[Boolean] = {
+  override def deleteById(id: Int): Future[Unit] = {
     repository.deleteById(id)
   }
 }

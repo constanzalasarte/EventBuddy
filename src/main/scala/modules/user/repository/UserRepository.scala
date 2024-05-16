@@ -9,5 +9,5 @@ trait UserRepository {
   def getUsers(): Future[Set[User]]
   def updateUser(id: Int, newUser: User): Future[Unit]
   def byID(id: Int): Future[Option[User]]
-  def deleteById(id: Int): Future[Boolean]
+  def deleteById(id: Int): Future[Unit]
 }

@@ -8,12 +8,15 @@ import modules.guest.ConfirmationStatus
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import server.Server
 
 import java.time.Instant
 import java.util.Date
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.{Duration, DurationInt}
 
 class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
   private val users = Server.setUpUsers()
@@ -45,27 +48,25 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
     }
   }
 
-//  "get users" in {
-//    Get("/user") ~> route ~> check {
-//      status shouldEqual StatusCodes.OK
-//      val jsonString = responseAs[String]
-//      val json = Unmarshal(jsonString).to[Set[User]]
-//      val usersSet = Await.result(json, 1.second)
-//
-//      usersSet shouldEqual getUserSet()
-//    }
-//  }
+  "get users" in {
+    Get("/user") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      val jsonString = responseAs[String]
+      val usersSet = parseUsers(jsonString)
+      usersSet shouldEqual getUserSet()
+    }
+  }
 
-//  private def getUserSet(): Set[User] = {
-//    val futureSet: Future[Set[User]] = users.getUsers()
-//    Await.ready(futureSet, 1.second)
-//    for(userSet <- futureSet.value){
-//      userSet match {
-//        case Success(set) => return set
-//        case Failure(_) => return Set.empty
-//      }
-//    }
-//  }
+  private def parseUsers(jsonString: String) = {
+    val json = Unmarshal(jsonString).to[Set[User]]
+    val usersSet = Await.result(json, 1.second)
+    usersSet
+  }
+
+  private def getUserSet(): Set[User] = {
+    val futureSet: Future[Set[User]] = users.getUsers()
+    Await.result(futureSet, Duration.Inf)
+  }
 
   "get user by id" in {
     Get("/user/byId?id=1") ~> route ~> check {
@@ -125,6 +126,11 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
     Delete("/user/byId?id=hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
+    }
+
+    Get("/user/byId?id=1") ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no user with id 1"
     }
   }
 }

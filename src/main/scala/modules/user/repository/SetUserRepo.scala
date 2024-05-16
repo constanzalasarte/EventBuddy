@@ -28,11 +28,11 @@ case class SetUserRepo(private var users: Set[User]) extends UserRepository {
     users.find(user => user.getId == id)
   }
 
-  override def deleteById(id: Int): Future[Boolean] ={
+  override def deleteById(id: Int): Future[Unit] ={
     val maybeUser = users.find(_.getId == id)
     maybeUser.foreach { found =>
       users = users - found
     }
-    Future { maybeUser.isDefined }
+    Future { }
   }
 }

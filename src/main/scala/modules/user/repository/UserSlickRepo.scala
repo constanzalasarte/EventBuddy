@@ -3,20 +3,13 @@ import slick.jdbc.JdbcBackend.Database
 import modules.user.User
 import server.Server.executionContext
 import slick.jdbc.PostgresProfile.api._
+import util.DBTables
+import util.DBTables.UserEntity
 
 import scala.concurrent.Future
 
-case class UserEntity(id: Option[Long], email: String, userName: String)
-
-class UserTable(tag: Tag) extends Table[UserEntity](tag, "users") {
-  def id = column[Long]("USER_ID", O.PrimaryKey, O.AutoInc)
-  def email: slick.lifted.Rep[String] = column[String]("EMAIL")
-  def userName = column[String]("USERNAME")
-  override def * =
-    (id.?, email, userName) <> (UserEntity.tupled, UserEntity.unapply)
-}
-
-case class UserSlickRepo(userTable: TableQuery[UserTable], db: Database) extends UserRepository{
+case class UserSlickRepo(db: Database) extends UserRepository{
+  private val userTable = DBTables.userTable
   override def addUser(user: User): Future[Unit] = {
     val action = DBIO.seq(userTable += transformUser(user))
     for {
@@ -33,26 +26,42 @@ case class UserSlickRepo(userTable: TableQuery[UserTable], db: Database) extends
   }
 
 
-  override def updateUser(id: Int, newUser: User): Future[Unit] = ???
+  override def updateUser(id: Int, newUser: User): Future[Unit] = {
+    val userEntity = transformUser(newUser)
+    val q = userTable.filter(_.id === id).update(userEntity)
+    for{
+      _ <- db.run(q)
+    } yield {}
+  }
 
-  override def byID(id: Int): Future[Option[User]] = ???
+  override def byID(id: Int): Future[Option[User]] = {
+    val q = userTable.filter(_.id === id)
+    for{
+      r <- db.run(q.result.headOption)
+    } yield {
+      transformToUser(r)
+    }
+  }
 
-  override def deleteById(id: Int): Future[Boolean] = ???
-//  {
-//    val q = userTable.filter(_.id === id)
-//    val action = q.delete
-//    val affectedRowsCount = db.run(action)
-//    affectedRowsCount.onComplete{
-//      case util.Success(value) => value != 0
-//    }
-//    false
-//  }
+  private def transformToUser(userEntity: Option[UserEntity]): Option[User] = {
+    if(userEntity.isEmpty) None
+    else Some(transformUserEntity(userEntity.get))
+  }
+
+  override def deleteById(id: Int): Future[Unit] = {
+    val q = userTable.filter(_.id === id).delete
+    for{
+      _ <- db.run(q)
+    } yield {
+      true
+    }
+  }
 
   private def transformUser(user: User): UserEntity =
     UserEntity(Some(user.getId), user.getEmail, user.getUserName)
 
   private def transformUserEntity(userEntity: UserEntity) =
-    User(userEntity.email, userEntity.userName, userEntity.id.get.toInt)
+    User(userEntity.email, userEntity.userName, userEntity.id.get)
 
   private def transformToUserSet(seq: Seq[UserEntity]): Set[User] =
     seq.toSet.map(

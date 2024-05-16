@@ -82,10 +82,8 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
   private def deleteUser(id: String): Route = {
     val inCaseUserExist = (_: Option[User]) => {
       deleteGuestsEventsAndElements(id.toInt)
-      val deleteById : Future[Boolean] = users.deleteById(id.toInt)
-      onSuccess(deleteById) { _ =>
-        complete(StatusCodes.OK, "User deleted")
-      }
+      users.deleteById(id.toInt)
+      complete(StatusCodes.OK, "User deleted")
     }
     checkIfUserExist(id, inCaseUserExist)
   }
