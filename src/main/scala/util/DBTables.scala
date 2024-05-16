@@ -6,12 +6,14 @@ import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
 import slick.jdbc.PostgresProfile.api._
 
+import java.time.LocalDate
+
 object DBTables {
   case class UserEntity(id: Option[Int], email: String, userName: String)
 
   class UserTable(tag: Tag) extends Table[UserEntity](tag, "users") {
     def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
-    def email: slick.lifted.Rep[String] = column[String]("EMAIL")
+    def email = column[String]("EMAIL")
     def userName = column[String]("USERNAME")
     override def * =
       (id.?, email, userName) <> (UserEntity.tupled, UserEntity.unapply)
@@ -19,17 +21,20 @@ object DBTables {
 
   val userTable = TableQuery[UserTable]
 
-//  case class EventEntity(id: Option[Long], email: String, userName: String)
-//
-//  class EventTable(tag: Tag) extends Table[UserEntity](tag, "users") {
-//    def id = column[Long]("ID", O.PrimaryKey, O.AutoInc)
-//    def email: slick.lifted.Rep[String] = column[String]("EMAIL")
-//    def userName = column[String]("USERNAME")
-//    override def * =
-//      (id.?, email, userName) <> (UserEntity.tupled, UserEntity.unapply)
-//  }
-//
-//  val eventTable = TableQuery[UserTable]
+  case class EventEntity(id: Option[Int], name: String, description: String, creatorId: Int, date: LocalDate)
+
+  class EventTable(tag: Tag) extends Table[EventEntity](tag, "events") {
+    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("NAME")
+    def description = column[String]("DESCRIPTION")
+    def creatorId = column[Int]("CREATOR_ID")
+    def date = column[LocalDate]("DATE")
+    def creator = foreignKey("CREATOR", creatorId, userTable)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    override def * =
+      (id.?, name, description, creatorId, date) <> (EventEntity.tupled, EventEntity.unapply)
+  }
+
+  val eventTable = TableQuery[EventTable]
 
   case class GuestEntity(id: Option[Long], userId: Int, eventId: Int, confirmationStatus: ConfirmationStatus, isHost: Boolean)
 
@@ -42,13 +47,46 @@ object DBTables {
 
     def id = column[Long]("ID", O.PrimaryKey, O.AutoInc)
     def userID = column[Int]("USER_ID")
-    def user = foreignKey("USER_FK", userID, userTable)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
     def eventId = column[Int]("EVENT_ID")
     def confirmationStatus = column[ConfirmationStatus]("CONFIRMATION_STATUS")
     def isHost = column[Boolean]("IS_HOST")
     override def * =
       (id.?, userID, eventId, confirmationStatus, isHost) <> (GuestEntity.tupled, GuestEntity.unapply)
+
+    def user =
+      foreignKey("USER_FK", userID, userTable)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def event =
+      foreignKey("EVENT_FK", eventId, eventTable)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
   }
 
   val guestTable = TableQuery[GuestTable]
+
+  case class ElementEntity(id: Option[Int], name: String, quantity: Int, eventId: Int, maxUsers: Int)
+
+  class ElementTable(tag: Tag) extends Table[ElementEntity](tag, "elements") {
+    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("NAME")
+    def quantity = column[Int]("QUANTITY")
+    def eventId = column[Int]("EVENT_ID")
+    def maxUsers = column[Int]("MAX_USERS")
+    def event = foreignKey("EVENT", eventId, eventTable)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    override def * =
+      (id.?, name, quantity, eventId, maxUsers) <> (ElementEntity.tupled, ElementEntity.unapply)
+  }
+
+  val elementTable = TableQuery[ElementTable]
+
+  case class UserElementEntity(id: Option[Int], userId: Int, elementId: Int)
+
+  class UserElementTable(tag: Tag) extends Table[UserElementEntity](tag, "user-element") {
+    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
+    def userId = column[Int]("USER_ID")
+    def elementId = column[Int]("ELEMENT_ID")
+    def user = foreignKey("USER", userId, userTable)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def element = foreignKey("ELEMENT", elementId, elementTable)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    override def * =
+      (id.?, userId, elementId) <> (UserElementEntity.tupled, UserElementEntity.unapply)
+  }
+
+  val userElement = TableQuery[UserElementTable]
 }
