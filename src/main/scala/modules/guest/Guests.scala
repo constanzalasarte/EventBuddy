@@ -17,9 +17,9 @@ object GuestServiceFactory{
 case class Guests(private val repository: GuestRepository, private val userService: CheckUsers, private val eventService: CheckEvents) extends CheckGuests {
   def addGuest(request: GuestRequest): Result[Guest] = {
     if(userNotExists(request.userId))
-      Error(IDNotFoundException("modules/user", request.userId))
+      Error(IDNotFoundException("user", request.userId))
     if (eventNotExists(request.eventId))
-      Error(IDNotFoundException("modules/event", request.eventId))
+      Error(IDNotFoundException("event", request.eventId))
     val guest = request.getGuest
     repository.addGuest(guest)
     Created(guest)
@@ -32,9 +32,9 @@ case class Guests(private val repository: GuestRepository, private val userServi
 
   def changeGuest(id: Int, patch: GuestPatchRequest): Result[Guest] = {
     val maybeGuest: Option[Guest] = checkGuest(id)
-    if(maybeGuest.isEmpty) Error(IDNotFoundException("modules/guest", id))
-    else if (patch.hasUserId && userNotExists(patch.userId.get)) Error(IDNotFoundException("modules/user", patch.userId.get))
-    else if(patch.hasEventId && eventNotExists(patch.eventId.get)) Error(IDNotFoundException("modules/event", patch.eventId.get))
+    if(maybeGuest.isEmpty) Error(IDNotFoundException("guest", id))
+    else if (patch.hasUserId && userNotExists(patch.userId.get)) Error(IDNotFoundException("user", patch.userId.get))
+    else if(patch.hasEventId && eventNotExists(patch.eventId.get)) Error(IDNotFoundException("event", patch.eventId.get))
     else {
       val guest = updateGuest(patch, maybeGuest)
       repository.changeGuestById(id, guest)
