@@ -42,6 +42,11 @@ object Server extends ServerRoutes {
     userFactory.createService(DBVersion, Some(db))
   }
 
+  def setUpElementsDB(db: Database, eventService: CheckEvents, userService: Users): ElementService = {
+    val elementFactory = CreateElementService
+    elementFactory.createElementService(DBVersion, eventService, userService, Some(db))
+  }
+
   def setUpEvents(): Events = {
     val eventFactory = EventServiceFactory
     eventFactory.createService(SetVersion)
