@@ -1,7 +1,7 @@
 package user
 
 import modules.user.User
-import modules.user.repository.UserSlickRepo
+import modules.user.repository.UserDBRepo
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
@@ -26,7 +26,7 @@ class UserSlickRepoTest extends AsyncWordSpec with Matchers with BeforeAndAfterE
   }
 
   "get no users with slick" in {
-    val slickRepo = UserSlickRepo(db)
+    val slickRepo = UserDBRepo(db)
     val set = slickRepo.getUsers()
     set.map { x: Set[User] =>
       x should have size 0
@@ -43,7 +43,7 @@ class UserSlickRepoTest extends AsyncWordSpec with Matchers with BeforeAndAfterE
   }
 
   "add user with slick" in {
-    val slickRepo = UserSlickRepo(db)
+    val slickRepo = UserDBRepo(db)
     slickRepo.addUser(User("email@test.com", "userName", 10))
     slickRepo.addUser(User("email2@test.com", "userName", 10))
     slickRepo.addUser(User("email3@test.com", "userName", 10))

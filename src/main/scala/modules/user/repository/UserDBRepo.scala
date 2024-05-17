@@ -8,7 +8,7 @@ import util.DBTables.UserEntity
 
 import scala.concurrent.Future
 
-case class UserSlickRepo(db: Database) extends UserRepository{
+case class UserDBRepo(db: Database) extends UserRepository{
   private val userTable = DBTables.userTable
   override def addUser(user: User): Future[Unit] = {
     val action = DBIO.seq(userTable += transformUser(user))
@@ -17,13 +17,12 @@ case class UserSlickRepo(db: Database) extends UserRepository{
     } yield {}
   }
 
-  def getUsers(): Future[Set[User]] = {
+  def getUsers(): Future[Set[User]] =
     for {
       result <- db.run(userTable.sortBy(_.id).result)
     } yield {
       transformToUserSet(result)
     }
-  }
 
 
   override def updateUser(id: Int, newUser: User): Future[Unit] = {
