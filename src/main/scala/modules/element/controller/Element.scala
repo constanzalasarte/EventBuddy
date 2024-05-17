@@ -18,6 +18,8 @@ case class Element(
 
   def getUsers: Set[Int] = users
 
+  def getQty: Int = quantity
+
   def changeName(newName: String): Unit = name = newName
 
   def changeQuantity(newQty: Int): Unit = quantity = newQty
