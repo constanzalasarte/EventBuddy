@@ -2,23 +2,25 @@ package modules.element.service
 
 import modules.element.controller.Element
 import modules.element.controller.json.input.{ElementPatchRequest, ElementRequest}
-import modules.element.repository.{ElementsRepository, ElementsSetRepo}
+import modules.element.repository.{ElementDBRepo, ElementsRepository, ElementsSetRepo}
 import modules.event.{CheckEvents, Event}
-import modules.user.{CheckUsers, User}
+import modules.user.CheckUsers
 import server.Server.executionContext
+import slick.jdbc.JdbcBackend.Database
 import util.Version
+import util.Version.DBVersion
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 object CreateElementService{
   def createElementService(
                             version: Version,
                             eventService: CheckEvents,
-                            userService: CheckUsers): ElementService =
+                            userService: CheckUsers, db: Option[Database] = None): ElementService =
     version match {
       case Version.SetVersion => ElementService(ElementsSetRepo(Set.empty), eventService, userService)
+      case DBVersion => ElementService(ElementDBRepo(db.get), eventService, userService)
     }
 }
 
@@ -139,14 +141,14 @@ case class ElementService(
   private def checkPatchValues(elementPatch: ElementPatchRequest): Future[Unit] = {
     if (elementPatch.hasEventId)
       checkEvent(elementPatch.eventId.get)
-    if (elementPatch.hasUsers) {
+    if (elementPatch.hasUsers && elementPatch.hasMaxUsers)
+      for{
+        _ <- checkUsersAndMaxUsers(elementPatch.users.get, elementPatch.maxUsers.get)
+      } yield{}
+    else if(elementPatch.hasUsers)
       for{
         _ <- checkUsers(elementPatch.users.get)
-      } yield{
-        if (elementPatch.hasMaxUsers)
-          checkUsersAndMaxUsers(elementPatch.users.get, elementPatch.maxUsers.get)
-      }
-    }
+      } yield{}
     else Future{}
   }
   private def checkUsers(users: Set[Int]): Future[Unit] = {
