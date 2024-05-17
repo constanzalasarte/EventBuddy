@@ -3,10 +3,12 @@ package modules.element.service
 import modules.element.controller.Element
 import modules.event.Event
 
+import scala.concurrent.Future
+
 trait CheckElements {
-  def byId(id: Int): Option[Element]
-  def deleteById(id: Int): Boolean
-  def deleteByEventId(id: Int): Unit
-  def deleteUserInUsers(id: Int): Unit
-  def deleteInEvents(deletedEvents: Set[Event]): Unit
+  def byId(id: Int): Future[Option[Element]]
+  def deleteById(id: Int): Future[Unit]
+  def deleteByEventId(id: Int): Future[Unit]
+  def deleteUserInUsers(id: Int): Future[Unit]
+  def deleteInEvents(deletedEvents: Set[Event]): Future[Unit]
 }
