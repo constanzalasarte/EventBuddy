@@ -3,6 +3,7 @@ package user
 import element.UseElementRoute
 import event.UseEventRoute
 import guest.UseGuestRoute
+import modules.element.controller.Element
 import modules.event.EventJsonProtocol
 import modules.guest.ConfirmationStatus
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
@@ -17,9 +18,8 @@ import util.DBTables.userTable
 
 import java.time.Instant
 import java.util.Date
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
-
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.{Duration, DurationInt}
 import slick.jdbc.PostgresProfile.api._
 
 class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
@@ -113,8 +113,8 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
       responseAs[String] shouldEqual "User deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
       events.byId(event.getId).isEmpty shouldEqual true
-      elements.byId(element.getId).isEmpty shouldEqual true
-      elements.isUserInUsers(1, elementOfUser.getId) shouldEqual false
+      getElement(element.getId).isEmpty shouldEqual true
+      isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
     Delete("/user/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -128,5 +128,13 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
       status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "There is no user with id 1"
     }
+  }
+  private def getElement(id: Int): Option[Element] = {
+    val futureSet: Future[Option[Element]] = elements.byId(id)
+    Await.result(futureSet, Duration.Inf)
+  }
+  private def isUserInUsers(userId: Int, elementId: Int): Boolean = {
+    val boolean = elements.isUserInUsers(userId, elementId)
+    Await.result(boolean, Duration.Inf)
   }
 }

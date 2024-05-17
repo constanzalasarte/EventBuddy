@@ -3,6 +3,7 @@ package user
 import element.UseElementRoute
 import event.UseEventRoute
 import guest.UseGuestRoute
+import modules.element.controller.Element
 import modules.event.EventJsonProtocol
 import modules.guest.ConfirmationStatus
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
@@ -57,16 +58,18 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
     }
   }
 
+  private def getElement(id: Int): Option[Element] = {
+    val futureSet: Future[Option[Element]] = elements.byId(id)
+    Await.result(futureSet, Duration.Inf)
+  }
+
   private def parseUsers(jsonString: String) = {
     val json = Unmarshal(jsonString).to[Set[User]]
     val usersSet = Await.result(json, 1.second)
     usersSet
   }
 
-  private def getUserSet(): Set[User] = {
-    val futureSet: Future[Set[User]] = users.getUsers()
-    Await.result(futureSet, Duration.Inf)
-  }
+
 
   "get user by id" in {
     Get("/user/byId?id=1") ~> route ~> check {
@@ -116,8 +119,8 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
       responseAs[String] shouldEqual "User deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
       events.byId(event.getId).isEmpty shouldEqual true
-      elements.byId(element.getId).isEmpty shouldEqual true
-      elements.isUserInUsers(1, elementOfUser.getId) shouldEqual false
+      getElement(element.getId).isEmpty shouldEqual true
+      isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
     Delete("/user/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -133,4 +136,15 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
       responseAs[String] shouldEqual "There is no user with id 1"
     }
   }
+
+  private def isUserInUsers(userId: Int, elementId: Int): Boolean = {
+    val boolean = elements.isUserInUsers(userId, elementId)
+    Await.result(boolean, Duration.Inf)
+  }
+
+  private def getUserSet(): Set[User] = {
+    val futureSet: Future[Set[User]] = users.getUsers()
+    Await.result(futureSet, Duration.Inf)
+  }
+
 }
