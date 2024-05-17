@@ -43,6 +43,24 @@ case class UserSlickRepo(db: Database) extends UserRepository{
     }
   }
 
+  override def noUserIds(ids: Set[Int]): Future[Option[Set[Int]]] = {
+    val q = userTable.filter(user => checkIfIdsContainId(ids, user.id))
+    for{
+      r <- db.run(q.result)
+    } yield {
+      transformToIdSet(r.toSet)
+    }
+  }
+
+  private def checkIfIdsContainId(ids: Set[Int], id: Rep[Int]): Boolean = {
+    ids.exists(elem => elem == id)
+  }
+
+  private def transformToIdSet(r: Set[UserEntity]): Option[Set[Int]]  = {
+    if (r.isEmpty) None
+    Some(r.map(userEntity => userEntity.id.get))
+  }
+
   private def transformToUser(userEntity: Option[UserEntity]): Option[User] = {
     if(userEntity.isEmpty) None
     else Some(transformUserEntity(userEntity.get))
@@ -67,6 +85,5 @@ case class UserSlickRepo(db: Database) extends UserRepository{
     seq.toSet.map(
       userEntity => transformUserEntity(userEntity)
     )
-
 }
 

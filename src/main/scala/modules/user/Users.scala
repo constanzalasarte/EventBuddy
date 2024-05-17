@@ -32,4 +32,8 @@ case class Users(private var repository: UserRepository) extends CheckUsers {
   override def deleteById(id: Int): Future[Unit] = {
     repository.deleteById(id)
   }
+
+  override def noUserIds(ids: Set[Int]): Future[Option[Set[Int]]] = {
+    repository.noUserIds(ids)
+  }
 }

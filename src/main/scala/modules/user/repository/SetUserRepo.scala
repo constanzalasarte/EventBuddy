@@ -35,4 +35,10 @@ case class SetUserRepo(private var users: Set[User]) extends UserRepository {
     }
     Future { }
   }
+
+  override def noUserIds(ids: Set[Int]): Future[Option[Set[Int]]] = {
+    val noUserId: Set[Int] = ids.filter(id => !users.exists(user => user.getId == id))
+    if(noUserId.isEmpty) Future{None}
+    else Future{Some(noUserId)}
+  }
 }
