@@ -9,6 +9,7 @@ import server.Server.executionContext
 import util.Version
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 object CreateElementService{
@@ -25,24 +26,34 @@ case class ElementService(
                            private val repository: ElementsRepository,
                            private val eventService: CheckEvents,
                            private val userService: CheckUsers) extends CheckElements{
-  override def byId(id: Int): Option[Element] =
+  override def byId(id: Int): Future[Option[Element]] =
     repository.byId(id)
 
-  override def deleteById(id: Int): Boolean =
+  override def deleteById(id: Int): Future[Unit] =
     repository.deleteById(id)
 
-  override def deleteByEventId(id: Int): Unit = {
-    val elements = repository.getElements
-    for (elem <- elements) {
-      if(elem.getEventId == id) repository.deleteById(id)
+  override def deleteByEventId(id: Int): Future[Unit] =
+    for{
+      elements <- repository.getElements
+    } yield {
+      elements.foreach(elem =>
+        if(elem.getEventId == id) repository.deleteById(id)
+      )
     }
+
+  override def deleteUserInUsers(id: Int): Future[Unit] =
+    for{
+      elements <- repository.getElements
+    } yield {
+      elements.foreach(elem => elem.deleteUserInUsers(id))
+    }
+
+
+  override def deleteInEvents(deletedEvents: Set[Event]): Future[Unit] = {
+    deletedEvents.foreach(event => deleteById(event.getId))
+    Future {}
   }
 
-  override def deleteUserInUsers(id: Int): Unit =
-    repository.getElements.foreach(elem => elem.deleteUserInUsers(id))
-
-  override def deleteInEvents(deletedEvents: Set[Event]): Unit =
-    deletedEvents.foreach(event => deleteById(event.getId))
 
   def addElement(elementRequest: ElementRequest): Element = {
     checkRequestValues(elementRequest)
@@ -52,30 +63,43 @@ case class ElementService(
     element
   }
 
-  def getElements: Set[Element] =
+  def getElements(): Future[Set[Element]] =
     repository.getElements
 
-  def updateById(id: Int, elemPatch: ElementPatchRequest): Element = {
-    val element: Element = getElement(id)
+  def updateById(id: Int, elemPatch: ElementPatchRequest): Future[Element] = {
+    for {
+      element <- getElement(id)
+      _ <- checkPatchValues(elemPatch)
+    } yield {
+      checkPatchAndElementValues(elemPatch, element)
 
-    checkPatchValues(elemPatch, element)
+      updateElement(elemPatch, element)
 
-    updateElement(elemPatch, element)
+      repository.changeById(id, element)
 
-    repository.changeById(id, element)
-
-    element
+      element
+    }
   }
 
-  def isUserInUsers(idUser: Int, idElement: Int): Boolean = {
-    byId(idElement)
-      .exists(element => element.getUsers.contains(idUser))
+  def isUserInUsers(idUser: Int, idElement: Int): Future[Boolean] = {
+    for{
+      element <- byId(idElement)
+    } yield {
+      if(element.isDefined) {
+        if(element.get.getUsers.contains(idUser))
+          return Future { true }
+      }
+      false
+    }
   }
 
-  private def getElement(id: Int) : Element = {
-    val maybeElement: Option[Element] = byId(id)
-    if (maybeElement.isEmpty) throw IDNotFoundException("modules/element", id)
-    maybeElement.get
+  private def getElement(id: Int) : Future[Element] = {
+    for{
+      maybeElem <- byId(id)
+    } yield {
+      if (maybeElem.isEmpty) throw IDNotFoundException("element", id)
+      maybeElem.get
+    }
   }
 
   private def checkRequestValues(elementRequest: ElementRequest): Unit = {
@@ -86,7 +110,7 @@ case class ElementService(
 
 
   private def checkEvent(eventId: Int): Unit =
-    if (!eventExist(eventId)) throw IDNotFoundException("modules/event", eventId)
+    if (!eventExist(eventId)) throw IDNotFoundException("event", eventId)
 
   private def checkUsersAndMaxUsers(users: Set[Int], maxUsers: Int): Unit = {
     checkUsers(users)
@@ -95,25 +119,8 @@ case class ElementService(
       throw UnacceptableException(unacceptableMaxUsers)
   }
 
-  private def checkUsers(users: Set[Int]): Unit = {
-    val id: Option[Int] = idThatDoesntExist(users)
-    if (id.isDefined) throw IDNotFoundException("user", id.get)
-  }
-
-  private def idThatDoesntExist(ids: Set[Int]) : Option[Int] = {
-    ids.foreach(id => {
-      val result = checkUser(id)
-      if(result.isDefined) return result
-    })
-    None
-  }
-
-  private def checkUser(id: Int) : Option[Int] = {
-    val futureUser = userService.byID(id)
-    futureUser.foreach { value: Option[User] =>
-      if (value.isEmpty) return Some(id)
-    }
-    None
+  private def checkUser(id: Int) : Future[Option[User]] = {
+    userService.byID(id)
   }
 
   private def eventExist(id: Int): Boolean = eventService.byId(id).isDefined
@@ -127,18 +134,40 @@ case class ElementService(
     element
   }
 
-  private def checkPatchValues(elementPatch: ElementPatchRequest, element: Element) = {
+  private def checkPatchValues(elementPatch: ElementPatchRequest): Future[Unit] = {
     if (elementPatch.hasEventId)
       checkEvent(elementPatch.eventId.get)
     if (elementPatch.hasUsers) {
-      checkUsers(elementPatch.users.get)
-      if (elementPatch.hasMaxUsers)
-        checkUsersAndMaxUsers(elementPatch.users.get, elementPatch.maxUsers.get)
+      for{
+        _ <- checkUsers(elementPatch.users.get)
+      } yield{
+        if (elementPatch.hasMaxUsers)
+          checkUsersAndMaxUsers(elementPatch.users.get, elementPatch.maxUsers.get)
+      }
     }
+    else Future{}
+  }
+  private def checkUsers(users: Set[Int]): Future[Unit] = {
+    for{
+      id: Option[Int] <- idThatDoesntExist(users)
+    } yield {
+      if (id.isDefined) throw IDNotFoundException("user", id.get)
+    }
+  }
+
+  private def idThatDoesntExist(ids: Set[Int]) : Future[Option[Int]] = {
+    for {
+      noUserIds: Option[Set[Int]] <- userService.noUserIds(ids)
+    } yield{
+      if(noUserIds.isEmpty) None
+      else Some(noUserIds.get.head)
+    }
+  }
+
+  private def checkPatchAndElementValues(elementPatch: ElementPatchRequest, element: Element): Unit = {
     if (elementPatch.hasMaxUsers)
       if (checkUsersSize(elementPatch, element))
         throw UnacceptableException(unacceptableMaxUsers)
-    None
   }
   private def checkUsersSize(elementPatch: ElementPatchRequest, element: Element) : Boolean =
     element.getUsers.size > elementPatch.maxUsers.get

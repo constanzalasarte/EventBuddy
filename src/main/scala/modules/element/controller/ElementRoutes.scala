@@ -6,11 +6,12 @@ import modules.element.service.ElementService
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onComplete, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object ElementRouteFactory{
   def create(service: ElementService): ElementRoutes =
@@ -62,8 +63,17 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
 
   private def updateElementById(id: String, elementPatch: ElementPatchRequest): Route = {
     try{
-      val element = service.updateById(id.toInt, elementPatch)
-      complete(StatusCodes.OK, element)
+      val futureElement : Future[Element] = service.updateById(id.toInt, elementPatch)
+      onComplete(futureElement) {
+        case Success(element) => complete(StatusCodes.OK, element)
+        case Failure(exception) => exception match{
+          case _: NumberFormatException => intExpectedResponse
+          case msg: IDNotFoundException =>
+            complete(StatusCodes.NotFound, msg.getMessage)
+          case msg: UnacceptableException =>
+            complete(StatusCodes.NotAcceptable, msg.getMessage)
+        }
+      }
     }
     catch {
       case _: NumberFormatException => intExpectedResponse
@@ -75,25 +85,20 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
   }
 
   private def getElementById(id: String): Route = {
-    try{
-      val element: Option[Element] = service.byId(id.toInt)
-      if(element.isEmpty) return elementIDNotFound(id.toInt)
-      complete(StatusCodes.OK, element.get)
+    val inCaseElemExist = (optElem: Option[Element]) => {
+      if (optElem.isEmpty) return elementIDNotFound(id.toInt)
+      complete(StatusCodes.OK, optElem.get)
     }
-    catch {
-      case _: NumberFormatException => intExpectedResponse
-    }
+
+    checkIfElementExist(id, inCaseElemExist)
   }
 
   private def deleteElementById(id: String): Route = {
-    try{
-      val deleted: Boolean = service.deleteById(id.toInt)
-      if(!deleted) return elementIDNotFound(id.toInt)
-      complete(StatusCodes.OK, "element deleted")
+    val inCaseElemExist = (_: Option[Element]) => {
+      service.deleteById(id.toInt)
+      complete(StatusCodes.OK, "Element deleted")
     }
-    catch {
-      case _: NumberFormatException => intExpectedResponse
-    }
+    checkIfElementExist(id, inCaseElemExist)
   }
 
   private def createElement(elementRequest: ElementRequest): Route = {
@@ -114,4 +119,22 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
 
   private def intExpectedResponse =
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
+
+  private def checkIfElementExist(id: String, inCaseElemExist: Option[Element] => Route) = {
+    try {
+      val futureElem: Future[Option[Element]] = service.byId(id.toInt)
+      onComplete(futureElem) {
+        case Success(optElem) =>
+          if (optElem.isEmpty) elementIDNotFound(id.toInt)
+          else {
+            inCaseElemExist(optElem)
+          }
+        case Failure(_) => elementIDNotFound(id.toInt)
+      }
+    }
+    catch {
+      case _: NumberFormatException =>
+        intExpectedResponse
+    }
+  }
 }
