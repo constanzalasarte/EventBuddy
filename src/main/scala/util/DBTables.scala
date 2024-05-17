@@ -3,10 +3,13 @@ package util
 import modules.guest.ConfirmationStatus
 import modules.guest.ConfirmationStatus.ConfirmationStatus
 import slick.ast.BaseTypedType
+import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.JdbcType
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.LocalDate
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 
 object DBTables {
   case class UserEntity(id: Option[Int], email: String, userName: String)
@@ -78,7 +81,7 @@ object DBTables {
 
   case class UserElementEntity(id: Option[Int], userId: Int, elementId: Int)
 
-  class UserElementTable(tag: Tag) extends Table[UserElementEntity](tag, "user-element") {
+  class UserElementTable(tag: Tag) extends Table[UserElementEntity](tag, "userElement") {
     def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
     def userId = column[Int]("USER_ID")
     def elementId = column[Int]("ELEMENT_ID")
@@ -89,4 +92,26 @@ object DBTables {
   }
 
   val userElement = TableQuery[UserElementTable]
+
+  def createSchema(): Database = {
+    val db = Database.forConfig("eventBuddy-db")
+    Await.result(db.run(DBIO.seq(
+      userTable.schema.createIfNotExists,
+      eventTable.schema.createIfNotExists,
+      guestTable.schema.createIfNotExists,
+      elementTable.schema.createIfNotExists,
+      userElement.schema.createIfNotExists)
+    ), 2.seconds)
+    db
+  }
+  def dropSchema(db: Database): Unit = {
+    Await.result(db.run(DBIO.seq(
+      userElement.schema.drop,
+      elementTable.schema.drop,
+      guestTable.schema.drop,
+      eventTable.schema.drop,
+      userTable.schema.drop)
+    ), 2.seconds)
+    db.close()
+  }
 }
