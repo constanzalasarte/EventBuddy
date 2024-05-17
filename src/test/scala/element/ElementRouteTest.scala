@@ -5,7 +5,7 @@ import modules.element.controller.Element
 import modules.element.controller.json.ElementJsonProtocol
 import modules.element.controller.json.input.{ElementPatchRequest, ElementRequest}
 import modules.event.EventJsonProtocol
-import modules.user.{User, UserJsonProtocol}
+import modules.user.UserJsonProtocol
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
@@ -46,7 +46,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
     Await.result(db.run(userTable.schema.create), 2.seconds)
-    users = Server.setUpUsersDB(db)
+//    users = Server.setUpUsersDB(db)
   }
 
   override protected def afterEach(): Unit = {
@@ -73,7 +73,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
     }
     val elementWDiffId = ElementRequest("name", 1, eventId = 100000, maxUsers = 2, users = Set.empty)
     Post("/element", elementWDiffId) ~> route ~> check {
-//      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "There is no event with id 100000"
     }
   }
@@ -129,22 +129,22 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   }
 
   "update element by id with invalid arguments" in {
-//    val elementPatchWEventId = ElementPatchRequest(eventId = Some(-1))
-//    Put("/element/byId?id=1", elementPatchWEventId) ~> route ~> check {
-//      status shouldEqual StatusCodes.NotFound
-//      responseAs[String] shouldEqual "There is no event with id -1"
-//    }
+    val elementPatchWEventId = ElementPatchRequest(eventId = Some(-1))
+    Put("/element/byId?id=1", elementPatchWEventId) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+      responseAs[String] shouldEqual "There is no event with id -1"
+    }
     val elementPatchWUsersId = ElementPatchRequest(users = Some(Set(-1)))
     Put("/element/byId?id=1", elementPatchWUsersId) ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "There is no user with id -1"
     }
 
-//    val elementPatchMaxUsers = ElementPatchRequest(maxUsers = Some(0), users = Some(Set(1)))
-//    Put("/element/byId?id=1", elementPatchMaxUsers) ~> route ~> check {
-//      status shouldEqual StatusCodes.NotAcceptable
-//      responseAs[String] shouldEqual "Max users can not be greater than users size"
-//    }
+    val elementPatchMaxUsers = ElementPatchRequest(maxUsers = Some(0), users = Some(Set(1)))
+    Put("/element/byId?id=1", elementPatchMaxUsers) ~> route ~> check {
+      status shouldEqual StatusCodes.NotAcceptable
+      responseAs[String] shouldEqual "Max users can not be greater than users size"
+    }
   }
 
   "create element by id with invalid arguments" in {
@@ -177,10 +177,6 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
 
   private def getElementSet(): Set[Element] = {
     val futureSet: Future[Set[Element]] = elements.getElements()
-    Await.result(futureSet, Duration.Inf)
-  }
-  private def getElement(id: Int): Option[Element] = {
-    val futureSet: Future[Option[Element]] = elements.byId(id)
     Await.result(futureSet, Duration.Inf)
   }
 }
