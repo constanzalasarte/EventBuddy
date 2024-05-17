@@ -2,6 +2,7 @@ package event
 
 import element.UseElementRoute
 import guest.UseGuestRoute
+import modules.element.controller.Element
 import modules.event.{Event, EventJsonProtocol, EventPatchRequest, EventRequest}
 import modules.guest.{ConfirmationStatus, Guests}
 import modules.user.{User, UserJsonProtocol, UserRequest}
@@ -15,7 +16,8 @@ import server.Server
 
 import java.time.Instant
 import java.util.Date
-import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 
 class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with EventJsonProtocol with UserJsonProtocol{
@@ -125,12 +127,12 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
 
   "delete event by id" in {
     val guest = guestRoute.createAGuest(1, 1, ConfirmationStatus.PENDING, isHost = false)
-    val element = elementRoute.createAElement("element name", 1, 1, 1, Set.empty)
+    val element = getElement
     Delete("/event/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "Event deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
-      elements.byId(element.getId).isEmpty shouldEqual true
+      getElementById(element.getId).isEmpty shouldEqual true
     }
     Delete("/event/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -140,5 +142,15 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
+  }
+
+  private def getElement = {
+    val element = elementRoute.createAElement("element name", 1, 1, 1, Set.empty)
+    Await.result(element, Duration.Inf)
+  }
+
+  private def getElementById(id: Int): Option[Element] = {
+    val futureSet: Future[Option[Element]] = elements.byId(id)
+    Await.result(futureSet, Duration.Inf)
   }
 }

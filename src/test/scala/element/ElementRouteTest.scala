@@ -46,7 +46,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
     Await.result(db.run(userTable.schema.create), 2.seconds)
-//    users = Server.setUpUsersDB(db)
+    users = Server.setUpUsersDB(db)
   }
 
   override protected def afterEach(): Unit = {
@@ -163,7 +163,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   "delete element by id" in {
     Delete("/element/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual "element deleted"
+      responseAs[String] shouldEqual "Element deleted"
     }
     Delete("/element/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound

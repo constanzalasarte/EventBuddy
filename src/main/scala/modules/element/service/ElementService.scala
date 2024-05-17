@@ -55,12 +55,14 @@ case class ElementService(
   }
 
 
-  def addElement(elementRequest: ElementRequest): Element = {
-    checkRequestValues(elementRequest)
-
-    val element = elementRequest.getElement
-    repository.addElement(element)
-    element
+  def addElement(elementRequest: ElementRequest): Future[Element] = {
+    for{
+      _ <- checkRequestValues(elementRequest)
+    } yield{
+      val element = elementRequest.getElement
+      repository.addElement(element)
+      element
+    }
   }
 
   def getElements(): Future[Set[Element]] =
@@ -102,25 +104,25 @@ case class ElementService(
     }
   }
 
-  private def checkRequestValues(elementRequest: ElementRequest): Unit = {
+  private def checkRequestValues(elementRequest: ElementRequest): Future[Unit] = {
     checkEvent(elementRequest.eventId)
 
-    checkUsersAndMaxUsers(elementRequest.users, elementRequest.maxUsers)
+    for{
+      _ <- checkUsersAndMaxUsers(elementRequest.users, elementRequest.maxUsers)
+    } yield{}
   }
 
 
   private def checkEvent(eventId: Int): Unit =
     if (!eventExist(eventId)) throw IDNotFoundException("event", eventId)
 
-  private def checkUsersAndMaxUsers(users: Set[Int], maxUsers: Int): Unit = {
-    checkUsers(users)
-
-    if (users.size > maxUsers)
-      throw UnacceptableException(unacceptableMaxUsers)
-  }
-
-  private def checkUser(id: Int) : Future[Option[User]] = {
-    userService.byID(id)
+  private def checkUsersAndMaxUsers(users: Set[Int], maxUsers: Int): Future[Unit] = {
+    for{
+      _ <- checkUsers(users)
+    } yield {
+      if (users.size > maxUsers)
+        throw UnacceptableException(unacceptableMaxUsers)
+    }
   }
 
   private def eventExist(id: Int): Boolean = eventService.byId(id).isDefined

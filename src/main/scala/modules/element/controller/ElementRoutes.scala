@@ -104,7 +104,16 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
   private def createElement(elementRequest: ElementRequest): Route = {
     try {
       val element = service.addElement(elementRequest)
-      complete(StatusCodes.Created, element)
+      onComplete(element) {
+        case Success(element) => complete(StatusCodes.Created, element)
+        case Failure(exception) => exception match{
+          case _: NumberFormatException => intExpectedResponse
+          case msg: IDNotFoundException =>
+            complete(StatusCodes.NotFound, msg.getMessage)
+          case msg: UnacceptableException =>
+            complete(StatusCodes.NotAcceptable, msg.getMessage)
+        }
+      }
     }
     catch {
       case msg: IDNotFoundException =>

@@ -4,7 +4,7 @@ import element.UseElementRoute
 import event.UseEventRoute
 import guest.UseGuestRoute
 import modules.element.controller.Element
-import modules.event.EventJsonProtocol
+import modules.event.{Event, EventJsonProtocol}
 import modules.guest.ConfirmationStatus
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -105,15 +105,15 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
     val event = eventRoute.createAEvent("name", "description", 1, date)
     val event2 = eventRoute.createAEvent("name", "description", 2, date)
     val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)
-    val element = elementRoute.createAElement("element name", 1, event.getId, 1, Set.empty)
-    val elementOfUser = elementRoute.createAElement("element name", 1, event2.getId, 1, Set(1))
+    val element = getElement(event, Set.empty)
+    val elementOfUser = getElement(event2, Set(1))
 
     Delete("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
       events.byId(event.getId).isEmpty shouldEqual true
-      getElement(element.getId).isEmpty shouldEqual true
+      getElementById(element.getId).isEmpty shouldEqual true
       isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
     Delete("/user/byId?id=2") ~> route ~> check {
@@ -129,7 +129,13 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
       responseAs[String] shouldEqual "There is no user with id 1"
     }
   }
-  private def getElement(id: Int): Option[Element] = {
+
+  private def getElement(event: Event, userSet: Set[Int]) = {
+    val element = elementRoute.createAElement("element name", 1, event.getId, 1, userSet)
+    Await.result(element, Duration.Inf)
+  }
+
+  private def getElementById(id: Int): Option[Element] = {
     val futureSet: Future[Option[Element]] = elements.byId(id)
     Await.result(futureSet, Duration.Inf)
   }
