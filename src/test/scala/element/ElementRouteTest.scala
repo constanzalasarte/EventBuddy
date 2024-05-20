@@ -22,7 +22,6 @@ import java.time.Instant
 import java.util.Date
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
-
 import slick.jdbc.PostgresProfile.api._
 
 
@@ -85,7 +84,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
       val jsonString = responseAs[String]
       val json = Unmarshal(jsonString).to[Set[Element]]
       val elementsSet = Await.result(json, 1.second)
-      elementsSet shouldEqual getElementSet()
+      elementsSet shouldEqual getElementSet
       elementsSet.size shouldEqual 1
     }
   }
@@ -176,7 +175,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
     }
   }
 
-  private def getElementSet(): Set[Element] = {
+  private def getElementSet: Set[Element] = {
     val futureSet: Future[Set[Element]] = elements.getElements()
     Await.result(futureSet, Duration.Inf)
   }
