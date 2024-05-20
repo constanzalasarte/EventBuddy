@@ -8,6 +8,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, extractRequest, get, onComplete, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.{Route, StandardRoute}
+import util.exceptions.IDNotFoundException
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -121,7 +122,13 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
 
   private def deleteGuestsEventsAndElements(id: Int): Unit = {
     guests.deleteByUserId(id)
-    elements.deleteUserInUsers(id)
+    val future = elements.deleteUserInUsers(id)
+    future.onComplete {
+      case Success(_) =>
+      case Failure(exception) => exception match {
+        case e: IDNotFoundException => print(e.getMessage)
+      }
+    }
     val deletedEvents = events.deleteByCreatorId(id)
     guests.deleteByEvents(deletedEvents)
     elements.deleteInEvents(deletedEvents)

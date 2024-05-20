@@ -31,7 +31,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   private val events = Server.setUpEvents()
   private val guests = Server.setUpGuests(events, users)
   private val elements = Server.setUpElements(events, users)
-  private val route = Server.combinedRoutes(users, events, guests, elements)
+  private var route = Server.combinedRoutes(users, events, guests, elements)
 
   private val userRoute = UseUserRoute(users)
   private val eventRoute = UseEventRoute(events)
@@ -46,7 +46,8 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
     Await.result(db.run(userTable.schema.create), 2.seconds)
-//    users = Server.setUpUsersDB(db)
+    users = Server.setUpUsersDB(db)
+    route = Server.combinedRoutes(users, events, guests, elements)
   }
 
   override protected def afterEach(): Unit = {

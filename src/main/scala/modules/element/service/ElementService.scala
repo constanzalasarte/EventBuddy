@@ -8,7 +8,7 @@ import modules.user.CheckUsers
 import server.Server.executionContext
 import slick.jdbc.JdbcBackend.Database
 import util.Version
-import util.Version.DBVersion
+import util.Version.{DBVersion, SetVersion}
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
 import scala.concurrent.Future
@@ -19,7 +19,7 @@ object CreateElementService{
                             eventService: CheckEvents,
                             userService: CheckUsers, db: Option[Database] = None): ElementService =
     version match {
-      case Version.SetVersion => ElementService(ElementsSetRepo(Set.empty), eventService, userService)
+      case SetVersion => ElementService(ElementsSetRepo(Set.empty), eventService, userService)
       case DBVersion => ElementService(ElementDBRepo(db.get), eventService, userService)
     }
 }
@@ -164,7 +164,7 @@ case class ElementService(
       noUserIds: Option[Set[Int]] <- userService.noUserIds(ids)
     } yield{
       if(noUserIds.isEmpty) None
-      else Some(noUserIds.get.head)
+      else noUserIds.get.headOption
     }
   }
 

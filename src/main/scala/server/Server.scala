@@ -3,7 +3,7 @@ package server
 import modules.element.service.{CreateElementService, ElementService}
 import modules.event.{CheckEvents, EventServiceFactory, Events}
 import modules.guest.{GuestServiceFactory, Guests}
-import modules.user.{CheckUsers, UserServiceFactory, Users}
+import modules.user.{CheckUsers, User, UserServiceFactory, Users}
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
@@ -39,6 +39,7 @@ object Server extends ServerRoutes {
 
   def setUpUsersDB(db: Database): Users = {
     val userFactory = UserServiceFactory
+    User.start()
     userFactory.createService(DBVersion, Some(db))
   }
 

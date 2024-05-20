@@ -25,26 +25,32 @@ import slick.jdbc.PostgresProfile.api._
 class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
   private var users = Server.setUpUsers()
   private val events = Server.setUpEvents()
-  private val guests = Server.setUpGuests(events, users)
-  private val elements = Server.setUpElements(events, users)
-  private val route = Server.combinedRoutes(users, events, guests, elements)
+  private var guests = Server.setUpGuests(events, users)
+  private var elements = Server.setUpElements(events, users)
+  private var route = Server.combinedRoutes(users, events, guests, elements)
 
-  private val guestRoute = UseGuestRoute(guests)
+  private var guestRoute = UseGuestRoute(guests)
   private val eventRoute = UseEventRoute(events)
-  private val elementRoute = UseElementRoute(elements)
+  private var elementRoute = UseElementRoute(elements)
 
   private val date = Date.from(Instant.now())
 
   var db: Database = _
 
+
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
-    Await.result(db.run(userTable.schema.create), 2.seconds)
+    Await.result(db.run(userTable.schema.create), Duration.Inf)
     users = Server.setUpUsersDB(db)
+    guests = Server.setUpGuests(events, users)
+    elements = Server.setUpElements(events, users)
+    elementRoute = UseElementRoute(elements)
+    guestRoute = UseGuestRoute(guests)
+    route = Server.combinedRoutes(users, events, guests, elements)
   }
 
   override protected def afterEach(): Unit = {
-    Await.result(db.run(userTable.schema.drop), 2.seconds)
+    Await.result(db.run(userTable.schema.drop), Duration.Inf)
     db.close
   }
 
@@ -66,6 +72,13 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   }
 
   "get user by id" in {
+    val user = UserRequest("user@mail.com", "userName")
+    Post("/user", user) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[User].getEmail shouldEqual "user@mail.com"
+      responseAs[User].getUserName shouldEqual "userName"
+      responseAs[User].getId shouldEqual 1
+    }
     Get("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[User].getEmail shouldEqual "user@mail.com"
@@ -83,6 +96,13 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   }
 
   "modify user by id" in {
+    val userReq = UserRequest("user@mail.com", "userName")
+    Post("/user", userReq) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[User].getEmail shouldEqual "user@mail.com"
+      responseAs[User].getUserName shouldEqual "userName"
+      responseAs[User].getId shouldEqual 1
+    }
     val user = UserPatchRequest(Some("changedEmail@mail.com"), None)
 
     Put("/user/byId?id=1", user) ~> route ~> check {
@@ -102,6 +122,13 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   }
 
   "delete user by id" in {
+    val userReq = UserRequest("user@mail.com", "userName")
+    Post("/user", userReq) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[User].getEmail shouldEqual "user@mail.com"
+      responseAs[User].getUserName shouldEqual "userName"
+      responseAs[User].getId shouldEqual 1
+    }
     val event = eventRoute.createAEvent("name", "description", 1, date)
     val event2 = eventRoute.createAEvent("name", "description", 2, date)
     val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)

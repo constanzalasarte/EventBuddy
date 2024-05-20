@@ -4,9 +4,11 @@ import modules.event.CheckEvents
 import modules.user.CheckUsers
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, parameters, path, pathEnd, post, put}
-import util.{Created, Error, Ok, Result}
+import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onComplete, parameters, path, pathEnd, post, put}
 import util.exceptions.IDNotFoundException
+
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) extends GuestJsonProtocol {
   def guestRoute: Route =
@@ -49,7 +51,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
   private def deleteGuestById(id: String): Route = {
     try{
       val deleted: Boolean = guests.deleteById(id.toInt)
-      if (!deleted) return IDNotFoundResponse("modules/guest", id.toInt)
+      if (!deleted) return IDNotFoundResponse("guest", id.toInt)
       complete(StatusCodes.OK, s"Guest deleted")
     }
     catch {
@@ -60,8 +62,8 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
 
   private def updateGuestById(id: String, guestPatch: GuestPatchRequest): Route = {
     try{
-      val result = guests.changeGuest(id.toInt, guestPatch)
-      getResponse(result)
+      val future = guests.changeGuest(id.toInt, guestPatch)
+      getResponse(future)
     }
     catch {
       case _: NumberFormatException =>
@@ -74,7 +76,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
   private def getGuestById(id: String) = {
     try{
       val guest: Option[Guest] = guests.byId(id.toInt)
-      if(guest.isEmpty) IDNotFoundResponse("modules/guest", id.toInt)
+      if(guest.isEmpty) IDNotFoundResponse("guest", id.toInt)
       else complete(StatusCodes.OK, guest.get)
     }
     catch {
@@ -83,16 +85,17 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
     }
   }
 
-  private def createGuest(guestRequest: GuestRequest) = {
-    val result: Result[Guest] = guests.addGuest(guestRequest)
-    getResponse(result)
+  private def createGuest(guestRequest: GuestRequest): Route = {
+    val eventualGuest = guests.addGuest(guestRequest)
+    getResponse(eventualGuest)
   }
 
-  private def getResponse(result: Result[Guest]) = {
-    result match {
-      case Error(error) => complete(result.getStatusCode, error.getMessage)
-      case Ok(ok) => complete(result.getStatusCode, ok)
-      case Created(created) => complete(result.getStatusCode, created)
+  private def getResponse(eventualGuest: Future[Guest]) = {
+    onComplete(eventualGuest) {
+      case Success(guest) => complete(StatusCodes.OK, guest)
+      case Failure(exception) => exception match {
+        case e: IDNotFoundException => complete(StatusCodes.NotFound, e.getMessage)
+      }
     }
   }
 

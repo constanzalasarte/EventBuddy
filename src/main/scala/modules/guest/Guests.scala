@@ -7,6 +7,8 @@ import server.Server.executionContext
 import util.{Created, Error, Ok, Result, Version}
 import util.exceptions.IDNotFoundException
 
+import scala.concurrent.Future
+
 object GuestServiceFactory{
   def createService(version: Version, userService: CheckUsers, eventService: CheckEvents): Guests =
     version match {
@@ -15,31 +17,56 @@ object GuestServiceFactory{
 }
 
 case class Guests(private val repository: GuestRepository, private val userService: CheckUsers, private val eventService: CheckEvents) extends CheckGuests {
-  def addGuest(request: GuestRequest): Result[Guest] = {
-    if(userNotExists(request.userId))
-      Error(IDNotFoundException("user", request.userId))
-    if (eventNotExists(request.eventId))
-      Error(IDNotFoundException("event", request.eventId))
-    val guest = request.getGuest
-    repository.addGuest(guest)
-    Created(guest)
-  }
+  def addGuest(request: GuestRequest): Future[Guest] =
+    for{
+      userNotExist <- userNotExists(request.userId)
+    } yield {
+      checkReqValues(request, userNotExist)
+      val guest = request.getGuest
+      repository.addGuest(guest)
+      guest
+    }
 
   def getGuests: Set[Guest] = repository.getGuests
 
   override def byId(id: Int): Option[Guest] =
     repository.byId(id)
 
-  def changeGuest(id: Int, patch: GuestPatchRequest): Result[Guest] = {
-    val maybeGuest: Option[Guest] = checkGuest(id)
-    if(maybeGuest.isEmpty) Error(IDNotFoundException("guest", id))
-    else if (patch.hasUserId && userNotExists(patch.userId.get)) Error(IDNotFoundException("user", patch.userId.get))
-    else if(patch.hasEventId && eventNotExists(patch.eventId.get)) Error(IDNotFoundException("event", patch.eventId.get))
-    else {
-      val guest = updateGuest(patch, maybeGuest)
-      repository.changeGuestById(id, guest)
-      Ok(guest)
+  def changeGuest(id: Int, patch: GuestPatchRequest): Future[Guest] = {
+    for{
+      _ <- checkPatchValues(patch)
+    } yield{
+      val maybeGuest: Option[Guest] = checkGuest(id)
+      if(maybeGuest.isEmpty) throw IDNotFoundException("guest", id)
+      else {
+        val guest = updateGuest(patch, maybeGuest)
+        repository.changeGuestById(id, guest)
+        guest
+      }
     }
+  }
+
+  private def checkPatchValues(patch: GuestPatchRequest): Future[Unit] = {
+    if(patch.hasEventId)
+      checkEvent(patch)
+    if (patch.hasUserId) {
+      for{
+        _ <- checkUser(patch)
+      } yield {}
+    }
+    Future{}
+  }
+
+  private def checkUser(patch: GuestPatchRequest): Future[Unit] = {
+    for {
+      userNotExist <- userNotExists(patch.userId.get)
+    } yield {
+      if (userNotExist) throw IDNotFoundException("user", patch.userId.get)
+    }
+  }
+
+  private def checkEvent(patch: GuestPatchRequest): Unit = {
+    if (eventNotExists(patch.eventId.get)) throw IDNotFoundException("event", patch.eventId.get)
   }
 
   private def eventNotExists(id: Int) =
@@ -74,11 +101,18 @@ case class Guests(private val repository: GuestRepository, private val userServi
     deletedEvents
       .foreach(event => deleteByEventId(event.getId))
 
-  private def userNotExists(userId: Int): Boolean = {
-    userService.byID(userId).foreach { user: Option[User] => {
-      return user.isEmpty
-    }}
-    true
+  private def userNotExists(userId: Int): Future[Boolean] = {
+    for{
+      user: Option[User] <- userService.byID(userId)
+    } yield {
+      user.isEmpty
+    }
+  }
+  private def checkReqValues(request: GuestRequest, userNotExist: Boolean): Unit = {
+    if (userNotExist)
+      throw IDNotFoundException("user", request.userId)
+    if (eventNotExists(request.eventId))
+      throw IDNotFoundException("event", request.eventId)
   }
 }
 

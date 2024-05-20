@@ -14,6 +14,7 @@ case class User(private var email: String, private var userName: String, private
 object User {
   private var id = 0
 
+  def start(): Unit = id = 0
   private def getNewID: Int = {
     incrementID()
     id
