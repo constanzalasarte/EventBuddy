@@ -2,7 +2,7 @@ package server
 
 import modules.element.controller.Element
 import modules.element.service.{CreateElementService, ElementService}
-import modules.event.{CheckEvents, EventServiceFactory, Events}
+import modules.event.{CheckEvents, Event, EventServiceFactory, Events}
 import modules.guest.{GuestServiceFactory, Guests}
 import modules.user.{CheckUsers, User, UserServiceFactory, Users}
 import org.apache.pekko.actor.typed.ActorSystem
@@ -38,6 +38,11 @@ object Server extends ServerRoutes {
     userFactory.createService(SetVersion)
   }
 
+  def setUpEvents(userService: CheckUsers): Events = {
+    val eventFactory = EventServiceFactory
+    eventFactory.createService(SetVersion, userService)
+  }
+
   def setUpUsersDB(db: Database): Users = {
     val userFactory = UserServiceFactory
     User.start()
@@ -50,9 +55,10 @@ object Server extends ServerRoutes {
     elementFactory.createElementService(DBVersion, eventService, userService, Some(db))
   }
 
-  def setUpEvents(userService: CheckUsers): Events = {
-    val eventFactory = EventServiceFactory
-    eventFactory.createService(SetVersion, userService)
+  def setUpEventDB(db: Database, users: CheckUsers): Events = {
+    val eventService = EventServiceFactory
+    Event.start()
+    eventService.createService(DBVersion, users, Some(db))
   }
 
   def startRoutes(): Unit = {

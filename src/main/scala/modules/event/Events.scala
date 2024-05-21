@@ -1,19 +1,20 @@
 package modules.event
 
-import modules.element.service.ElementService
-import modules.event.repository.{EventRepository, EventSetRepo}
-import modules.guest.Guests
-import modules.user.{CheckUsers, Users}
+import modules.event.repository.{EventDBRepo, EventRepository, EventSetRepo}
+import modules.user.CheckUsers
 import server.Server.executionContext
+import slick.jdbc.JdbcBackend.Database
 import util.Version
+import util.Version.DBVersion
 import util.exceptions.IDNotFoundException
 
 import scala.concurrent.Future
 
 object EventServiceFactory{
-  def createService(version: Version, userService: CheckUsers): Events =
+  def createService(version: Version, userService: CheckUsers, db: Option[Database] = None): Events =
     version match {
       case Version.SetVersion => Events(EventSetRepo(Set.empty), userService)
+      case DBVersion => Events(EventDBRepo(db.get), userService)
     }
 }
 

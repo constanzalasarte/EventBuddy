@@ -30,13 +30,14 @@ case class Event(
   override def toString: String = s"Event(\nid: $id,\nname: $name,\ndescription: $description,\ncreatorId: $creatorId,\ndate: $getDate)"
 }
 
-private object Event {
+object Event {
   private var id = 0
 
   private def getNewID: Int = {
     incrementID()
     id
   }
+  def start() = id=0
 
   private def incrementID(): Unit = id = id+1
 }
