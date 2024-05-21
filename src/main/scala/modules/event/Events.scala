@@ -37,9 +37,10 @@ case class Events(private var repository: EventRepository, private val userServi
 
   override def deleteById(id: Int): Future[Unit] = {
     for{
-      deleted <- repository.deleteById(id)
+      event <- repository.byId(id)
     } yield {
-      if (!deleted) throw IDNotFoundException("event", id)
+      if(event.isEmpty) throw IDNotFoundException("event", id)
+      repository.deleteById(id)
     }
   }
 

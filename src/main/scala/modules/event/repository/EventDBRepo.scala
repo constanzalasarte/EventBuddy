@@ -74,6 +74,6 @@ case class EventDBRepo(db: Database) extends EventRepository {
     LocalDate.ofInstant(date.toInstant, ZoneId.systemDefault())
   }
   private def localDateToDate(localDate: LocalDate): Date = {
-    Date.from(Instant.from(localDate))
+    Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant)
   }
 }
