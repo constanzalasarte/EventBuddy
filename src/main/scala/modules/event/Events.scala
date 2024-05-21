@@ -1,39 +1,107 @@
 package modules.event
 
+import modules.element.service.ElementService
 import modules.event.repository.{EventRepository, EventSetRepo}
+import modules.guest.Guests
+import modules.user.{CheckUsers, Users}
+import server.Server.executionContext
 import util.Version
+import util.exceptions.IDNotFoundException
+
+import scala.concurrent.Future
 
 object EventServiceFactory{
-  def createService(version: Version): Events =
+  def createService(version: Version, userService: CheckUsers): Events =
     version match {
-      case Version.SetVersion => Events(EventSetRepo(Set.empty))
+      case Version.SetVersion => Events(EventSetRepo(Set.empty), userService)
     }
 }
 
-case class Events(private var repository: EventRepository) extends CheckEvents {
-  def addEvent(event: Event): Unit =
-    repository.addEvent(event)
+case class Events(private var repository: EventRepository, private val userService: CheckUsers) extends CheckEvents {
+  def addEvent(request: EventRequest): Future[Event] = {
+    for{
+      _ <- userExist(request.getCreatorId)
+    } yield {
+      val event = request.getEvent
+      repository.addEvent(event)
+      event
+    }
+  }
 
-  def getEvents: Set[Event] = repository.getEvents
+  def getEvents: Future[Set[Event]] = repository.getEvents
 
-  override def byId(id: Int): Option[Event] = {
+  override def byId(id: Int): Future[Option[Event]] = {
     repository.byId(id)
   }
 
-  override def deleteById(id: Int): Boolean = {
-    repository.deleteById(id)
+  override def deleteById(id: Int): Future[Unit] = {
+    for{
+      deleted <- repository.deleteById(id)
+    } yield {
+      if (!deleted) throw IDNotFoundException("event", id)
+    }
   }
 
-  override def byCreatorId(id: Int): Set[Event] =
-    getEvents.filter(event => event.getCreatorId == id)
 
-  override def deleteByCreatorId(id: Int): Set[Event] = {
-    val events = getEvents
-      .filter(event => event.getCreatorId == id)
-    events.foreach(event => deleteById(event.getId))
-    events
+  override def byCreatorId(id: Int): Future[Set[Event]] = {
+    for{
+      events <- getEvents
+    } yield {
+      events.filter(event => event.getCreatorId == id)
+    }
   }
 
-  def changeEvent(id: Int, newEvent: Event): Unit =
-    repository.changeEvent(id, newEvent)
+  override def deleteByCreatorId(id: Int): Future[Set[Event]] = {
+    for{
+      events <- getEvents
+    } yield {
+      val eventsCreator = events.filter(event => event.getCreatorId == id)
+      eventsCreator.foreach(event => deleteById(event.getId))
+      eventsCreator
+    }
+  }
+
+  def changeEvent(id: Int, patchRequest: EventPatchRequest): Future[Event] = {
+    for{
+      event <- updateEvent(id, patchRequest)
+    } yield {
+      repository.changeEvent(id, event)
+      event
+    }
+  }
+
+  def updateEvent(id: Int, patchRequest: EventPatchRequest): Future[Event] = {
+    for{
+      _ <- checkPatchValues(patchRequest)
+      optEvent <- byId(id)
+    } yield {
+      if(optEvent.isEmpty) throw IDNotFoundException("event", id)
+      val event = updateEventVariables(patchRequest, optEvent)
+      event
+    }
+  }
+
+  private def checkPatchValues(patchRequest: EventPatchRequest): Future[Unit] = {
+    if (patchRequest.hasCreatorId)
+      for {
+        _ <- userExist(patchRequest.creatorId.get)
+      } yield {}
+    else Future {}
+  }
+
+  private def userExist(id: Int): Future[Unit] = {
+    for {
+      user <- userService.byID(id)
+    } yield{
+      if(user.isEmpty) throw IDNotFoundException("user", id)
+    }
+  }
+  private def updateEventVariables(eventPatch: EventPatchRequest, optEvent: Option[Event]): Event = {
+    val event = optEvent.get
+    if (eventPatch.hasName) event.changeName(eventPatch.name.get)
+    if (eventPatch.hasDescription) event.changeDescription(eventPatch.description.get)
+    if (eventPatch.hasCreatorId) event.changeCreatorId(eventPatch.creatorId.get)
+    if (eventPatch.hasDate) event.changeDate(eventPatch.date.get)
+    event
+  }
 }

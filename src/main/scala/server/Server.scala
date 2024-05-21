@@ -1,5 +1,6 @@
 package server
 
+import modules.element.controller.Element
 import modules.element.service.{CreateElementService, ElementService}
 import modules.event.{CheckEvents, EventServiceFactory, Events}
 import modules.guest.{GuestServiceFactory, Guests}
@@ -45,17 +46,18 @@ object Server extends ServerRoutes {
 
   def setUpElementsDB(db: Database, eventService: CheckEvents, userService: Users): ElementService = {
     val elementFactory = CreateElementService
+    Element.start()
     elementFactory.createElementService(DBVersion, eventService, userService, Some(db))
   }
 
-  def setUpEvents(): Events = {
+  def setUpEvents(userService: CheckUsers): Events = {
     val eventFactory = EventServiceFactory
-    eventFactory.createService(SetVersion)
+    eventFactory.createService(SetVersion, userService)
   }
 
   def startRoutes(): Unit = {
     val userService = setUpUsers()
-    val eventService = setUpEvents()
+    val eventService = setUpEvents(userService)
     val guestService = setUpGuests(eventService, userService)
     val elementService = setUpElements(eventService, userService)
     val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(userService, eventService, guestService, elementService))

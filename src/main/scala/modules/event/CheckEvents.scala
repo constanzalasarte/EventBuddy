@@ -1,8 +1,10 @@
 package modules.event
 
+import scala.concurrent.Future
+
 trait CheckEvents {
-  def byId(id: Int): Option[Event]
-  def byCreatorId(id: Int): Set[Event]
-  def deleteById(id: Int): Boolean
-  def deleteByCreatorId(id: Int): Set[Event]
+  def byId(id: Int): Future[Option[Event]]
+  def byCreatorId(id: Int): Future[Set[Event]]
+  def deleteById(id: Int): Future[Unit]
+  def deleteByCreatorId(id: Int): Future[Set[Event]]
 }

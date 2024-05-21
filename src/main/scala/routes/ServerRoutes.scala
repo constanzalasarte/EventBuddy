@@ -11,7 +11,7 @@ import org.apache.pekko.http.scaladsl.server.Directives.pathPrefix
 trait ServerRoutes {
   def combinedRoutes(users: Users, events: Events, guests: Guests, elementService: ElementService): Route = {
     val userRoutes = UserRoutes(users, events, guests, elementService)
-    val eventRoute = EventRoutes(events, users, guests, elementService)
+    val eventRoute = EventRoutes(events, guests, elementService)
     val guestRoute = GuestRoutes(guests, events, users)
     val elementRoute = setUpElementRoutes(elementService)
 

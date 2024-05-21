@@ -9,7 +9,7 @@ import slick.jdbc.PostgresProfile.api._
 
 import java.time.LocalDate
 import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{Duration, DurationInt}
 
 object DBTables {
   case class UserEntity(id: Option[Int], email: String, userName: String)
@@ -95,13 +95,11 @@ object DBTables {
 
   def createSchema(): Database = {
     val db = Database.forConfig("eventBuddy-db")
-    Await.result(db.run(DBIO.seq(
-      userTable.schema.createIfNotExists,
-      eventTable.schema.createIfNotExists,
-      guestTable.schema.createIfNotExists,
-      elementTable.schema.createIfNotExists,
-      userElement.schema.createIfNotExists)
-    ), 2.seconds)
+    Await.result(db.run(userTable.schema.createIfNotExists), Duration.Inf)
+    Await.result(db.run(eventTable.schema.createIfNotExists), Duration.Inf)
+    Await.result(db.run(guestTable.schema.createIfNotExists), Duration.Inf)
+    Await.result(db.run(elementTable.schema.createIfNotExists), Duration.Inf)
+    Await.result(db.run(userElement.schema.createIfNotExists), Duration.Inf)
     db
   }
   def dropSchema(db: Database): Unit = {
