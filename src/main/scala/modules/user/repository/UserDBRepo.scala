@@ -51,20 +51,6 @@ case class UserDBRepo(db: Database) extends UserRepository{
     }
   }
 
-  private def checkIfIdsContainId(ids: Set[Int], id: Rep[Int]): Boolean = {
-    ids.exists(elem => elem == id)
-  }
-
-  private def transformToIdSet(r: Set[UserEntity]): Option[Set[Int]]  = {
-    if (r.isEmpty) None
-    Some(r.map(userEntity => userEntity.id.get))
-  }
-
-  private def transformToUser(userEntity: Option[UserEntity]): Option[User] = {
-    if(userEntity.isEmpty) None
-    else Some(transformUserEntity(userEntity.get))
-  }
-
   override def deleteById(id: Int): Future[Unit] = {
     val q = userTable.filter(_.id === id).delete
     for{
@@ -84,5 +70,19 @@ case class UserDBRepo(db: Database) extends UserRepository{
     seq.toSet.map(
       userEntity => transformUserEntity(userEntity)
     )
+
+  private def checkIfIdsContainId(ids: Set[Int], id: Rep[Int]): Boolean = {
+    ids.exists(elem => elem == id)
+  }
+
+  private def transformToIdSet(r: Set[UserEntity]): Option[Set[Int]]  = {
+    if (r.isEmpty) None
+    Some(r.map(userEntity => userEntity.id.get))
+  }
+
+  private def transformToUser(userEntity: Option[UserEntity]): Option[User] = {
+    if(userEntity.isEmpty) None
+    else Some(transformUserEntity(userEntity.get))
+  }
 }
 
