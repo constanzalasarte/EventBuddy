@@ -16,42 +16,48 @@ import org.scalatest.wordspec.AnyWordSpec
 import server.Server
 import slick.jdbc.JdbcBackend.Database
 import user.UseUserRoute
-import util.DBTables.userTable
+import util.DBTables.{createSchema, dropSchema, userElement}
 
 import java.time.Instant
 import java.util.Date
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
-import slick.jdbc.PostgresProfile.api._
+import scala.concurrent.{Await, Future}
 
 
-class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with EventJsonProtocol with UserJsonProtocol with ElementJsonProtocol {
+class ElementDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with EventJsonProtocol with UserJsonProtocol with ElementJsonProtocol {
   private var users = Server.setUpUsers()
-  private val events = Server.setUpEvents(users)
-  private val guests = Server.setUpGuests(events, users)
-  private val elements = Server.setUpElements(events, users)
+  private var events = Server.setUpEvents(users)
+  private var guests = Server.setUpGuests(events, users)
+  private var elements = Server.setUpElements(events, users)
   private var route = Server.combinedRoutes(users, events, guests, elements)
 
-  private val userRoute = UseUserRoute(users)
-  private val eventRoute = UseEventRoute(events)
+  private var userRoute = UseUserRoute(users)
+  private var eventRoute = UseEventRoute(events)
 
   private val date = Date.from(Instant.now())
 
-  private val user = userRoute.createAUser("email", "name")
-  private val event = eventRoute.createAEvent("event name", "event description", user.getId, date)
+  private var user = userRoute.createAUser("email", "name")
+  private var event = eventRoute.createAEvent("event name", "event description", user.getId, date)
 
   var db: Database = _
 
   override protected def beforeEach(): Unit = {
-    db = Database.forConfig("eventBuddy-db")
-    Await.result(db.run(userTable.schema.create), 2.seconds)
+    db = createSchema()
     users = Server.setUpUsersDB(db)
+    events = Server.setUpEventDB(db, users)
+    guests = Server.setUpGuests(events, users)
+    elements = Server.setUpElementsDB(db, events, users)
+
+    userRoute = UseUserRoute(users)
+    eventRoute = UseEventRoute(events)
+
     route = Server.combinedRoutes(users, events, guests, elements)
+    user = userRoute.createAUser("email", "name")
+    event = eventRoute.createAEvent("event name", "event description", user.getId, date)
   }
 
   override protected def afterEach(): Unit = {
-    Await.result(db.run(userTable.schema.drop), 2.seconds)
-    db.close
+    dropSchema(db)
   }
 
   "get no elements" in {
@@ -79,6 +85,15 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   }
 
   "get elements" in {
+    val element = ElementRequest("name", 1, eventId = event.getId, maxUsers = 2, users = Set.empty)
+    Post("/element", element) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[Element].getName shouldEqual "name"
+      responseAs[Element].getEventId shouldEqual event.getId
+      responseAs[Element].getMaxUsers shouldEqual 2
+      responseAs[Element].getUsers shouldEqual Set.empty
+      responseAs[Element].getId shouldEqual 1
+    }
     Get("/element") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val jsonString = responseAs[String]
@@ -88,8 +103,16 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
       elementsSet.size shouldEqual 1
     }
   }
-
   "get element by id" in {
+    val element = ElementRequest("name", 1, eventId = event.getId, maxUsers = 2, users = Set.empty)
+    Post("/element", element) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[Element].getName shouldEqual "name"
+      responseAs[Element].getEventId shouldEqual event.getId
+      responseAs[Element].getMaxUsers shouldEqual 2
+      responseAs[Element].getUsers shouldEqual Set.empty
+      responseAs[Element].getId shouldEqual 1
+    }
     Get("/element/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[Element].getName shouldEqual "name"
@@ -109,6 +132,15 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   }
 
   "modify element by id" in {
+    val element = ElementRequest("name", 1, eventId = event.getId, maxUsers = 2, users = Set.empty)
+    Post("/element", element) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[Element].getName shouldEqual "name"
+      responseAs[Element].getEventId shouldEqual event.getId
+      responseAs[Element].getMaxUsers shouldEqual 2
+      responseAs[Element].getUsers shouldEqual Set.empty
+      responseAs[Element].getId shouldEqual 1
+    }
     val elementPatch = ElementPatchRequest(name = Some("new name"))
     Put("/element/byId?id=1", elementPatch) ~> route ~> check {
       status shouldEqual StatusCodes.OK
@@ -129,6 +161,15 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   }
 
   "update element by id with invalid arguments" in {
+    val element = ElementRequest("name", 1, eventId = event.getId, maxUsers = 2, users = Set.empty)
+    Post("/element", element) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[Element].getName shouldEqual "name"
+      responseAs[Element].getEventId shouldEqual event.getId
+      responseAs[Element].getMaxUsers shouldEqual 2
+      responseAs[Element].getUsers shouldEqual Set.empty
+      responseAs[Element].getId shouldEqual 1
+    }
     val elementPatchWEventId = ElementPatchRequest(eventId = Some(-1))
     Put("/element/byId?id=1", elementPatchWEventId) ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -161,6 +202,15 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   }
 
   "delete element by id" in {
+    val element = ElementRequest("name", 1, eventId = event.getId, maxUsers = 2, users = Set.empty)
+    Post("/element", element) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[Element].getName shouldEqual "name"
+      responseAs[Element].getEventId shouldEqual event.getId
+      responseAs[Element].getMaxUsers shouldEqual 2
+      responseAs[Element].getUsers shouldEqual Set.empty
+      responseAs[Element].getId shouldEqual 1
+    }
     Delete("/element/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "Element deleted"
@@ -179,4 +229,5 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
     val futureSet: Future[Set[Element]] = elements.getElements()
     Await.result(futureSet, Duration.Inf)
   }
+
 }

@@ -45,11 +45,30 @@ case class ElementDBRepo(db: Database) extends ElementsRepository {
   private def transformElemEntity(elemEntity: ElementEntity): Element =
     new Element(elemEntity.name, elemEntity.quantity, elemEntity.eventId, elemEntity.maxUsers, Set.empty, elemEntity.id.get)
 
-  override def changeById(id: Int, newElem: Element): Future[Unit] = ???
+  override def changeById(id: Int, newElem: Element): Future[Unit] = {
+    val elementEntity = transformElem(newElem)
+    val q = elementTable.filter(_.id === id).update(elementEntity)
+    for {
+      _ <- db.run(q)
+    } yield{}
+  }
 
-  override def byId(id: Int): Future[Option[Element]] = ???
+  override def byId(id: Int): Future[Option[Element]] = {
+    val q = elementTable.filter(_.id === id)
+    for {
+      elementEntity <- db.run(q.result.headOption)
+    } yield {
+      if(elementEntity.isEmpty) None
+      else Some(transformElemEntity(elementEntity.get))
+    }
+  }
 
-  override def deleteById(id: Int): Future[Unit] = ???
+  override def deleteById(id: Int): Future[Unit] = {
+    val q = elementTable.filter(_.id === id).delete
+    for{
+      _ <- db.run(q)
+    } yield {}
+  }
 
   private def transformUserElem(element: Element): Set[UserElementEntity] = {
     element.getUsers.map(user =>

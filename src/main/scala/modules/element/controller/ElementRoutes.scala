@@ -26,7 +26,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
       pathEnd{
         concat(
           get {
-            complete(StatusCodes.OK, service.getElements)
+            getElements
           },
           post {
             entity(as[ElementRequest]) { elementRequest =>
@@ -39,6 +39,14 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
         getByIdRoute
       },
     )
+
+  private def getElements: Route = {
+    val futureSet: Future[Set[Element]] = service.getElements()
+    onComplete(futureSet) {
+      case Success(elemSet) => complete(StatusCodes.OK, elemSet)
+      case Failure(_) => complete(StatusCodes.NoContent, "There is a failure getting the element set")
+    }
+  }
 
   private def getByIdRoute: Route =
     concat(

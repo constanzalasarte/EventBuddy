@@ -106,17 +106,20 @@ case class ElementService(
     }
   }
 
-  private def checkRequestValues(elementRequest: ElementRequest): Future[Unit] = {
-    checkEvent(elementRequest.eventId)
-
+  private def checkRequestValues(elementRequest: ElementRequest): Future[Unit] =
     for{
       _ <- checkUsersAndMaxUsers(elementRequest.users, elementRequest.maxUsers)
+      _ <- checkEvent(elementRequest.eventId)
     } yield{}
+
+
+  private def checkEvent(eventId: Int): Future[Unit] = {
+    for{
+      eventExist <- eventExist(eventId)
+    } yield{
+      if(!eventExist) throw IDNotFoundException("event", eventId)
+    }
   }
-
-
-  private def checkEvent(eventId: Int): Unit =
-    if (!eventExist(eventId)) throw IDNotFoundException("event", eventId)
 
   private def checkUsersAndMaxUsers(users: Set[Int], maxUsers: Int): Future[Unit] = {
     for{
@@ -127,7 +130,12 @@ case class ElementService(
     }
   }
 
-  private def eventExist(id: Int): Boolean = eventService.byId(id).isDefined
+  private def eventExist(id: Int): Future[Boolean] =
+    for{
+      event <- eventService.byId(id)
+    } yield{
+      event.isDefined
+    }
 
   private def updateElement(elementPatch: ElementPatchRequest, element: Element) = {
     if (elementPatch.hasName) element.changeName(elementPatch.name.get)
@@ -139,18 +147,32 @@ case class ElementService(
   }
 
   private def checkPatchValues(elementPatch: ElementPatchRequest): Future[Unit] = {
-    if (elementPatch.hasEventId)
-      checkEvent(elementPatch.eventId.get)
+    for{
+      _ <- checkFutureEvent(elementPatch)
+      _ <- checkFutureUsersAndMaxUser(elementPatch)
+    } yield {}
+  }
+
+  private def checkFutureUsersAndMaxUser(elementPatch: ElementPatchRequest) = {
     if (elementPatch.hasUsers && elementPatch.hasMaxUsers)
-      for{
+      for {
         _ <- checkUsersAndMaxUsers(elementPatch.users.get, elementPatch.maxUsers.get)
-      } yield{}
-    else if(elementPatch.hasUsers)
-      for{
+      } yield {}
+    else if (elementPatch.hasUsers)
+      for {
         _ <- checkUsers(elementPatch.users.get)
-      } yield{}
+      } yield {}
+    else Future {}
+  }
+
+  private def checkFutureEvent(elementPatch: ElementPatchRequest) = {
+    if (elementPatch.hasEventId)
+      for {
+        _ <- checkEvent(elementPatch.eventId.get)
+      } yield {}
     else Future{}
   }
+
   private def checkUsers(users: Set[Int]): Future[Unit] = {
     for{
       id: Option[Int] <- idThatDoesntExist(users)

@@ -46,13 +46,16 @@ case class Element(
   }
 }
 
-private object Element {
+object Element {
   private var id = 0
+
+  def start(): Unit = id = 0
 
   private def getNewID: Int = {
     incrementID()
     id
   }
+
 
   private def incrementID(): Unit = id = id+1
 }
