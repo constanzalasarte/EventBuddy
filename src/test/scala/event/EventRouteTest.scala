@@ -7,8 +7,9 @@ import modules.event.{Event, EventJsonProtocol, EventPatchRequest, EventRequest}
 import modules.guest.{ConfirmationStatus, Guests}
 import modules.user.{User, UserJsonProtocol, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
@@ -22,7 +23,7 @@ import scala.concurrent.{Await, Future}
 
 class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest with EventJsonProtocol with UserJsonProtocol{
   private val users = Server.setUpUsers()
-  private val events = Server.setUpEvents()
+  private val events = Server.setUpEvents(users)
   private val guests = Server.setUpGuests(events, users)
   private val elements = Server.setUpElements(events, users)
   private val route = Server.combinedRoutes(users, events, guests, elements)
@@ -31,6 +32,8 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
   private val elementRoute = UseElementRoute(elements)
 
   private val date = Date.from(Instant.now())
+
+  implicit val timeout: RouteTestTimeout = RouteTestTimeout(1.seconds)
 
   "get no events" in {
     Get("/event") ~> route ~> check {
@@ -69,8 +72,13 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
       val jsonString = responseAs[String]
       val json = Unmarshal(jsonString).to[Set[Event]]
       val eventsSet = Await.result(json, 1.second)
-      eventsSet shouldEqual events.getEvents
+      eventsSet shouldEqual getEvents
     }
+  }
+
+  private def getEvents = {
+    val eventsFuture = events.getEvents
+    Await.result(eventsFuture, Duration.Inf)
   }
 
   "get event1" in{
@@ -98,7 +106,7 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
     }
   }
 
-  "modify user by id" in {
+  "modify event by id" in {
     val event = EventPatchRequest(Some("new event name"), Some("new event description"), None, None)
 
     Put("/event/byId?id=1", event) ~> route ~> check {
@@ -127,12 +135,14 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
 
   "delete event by id" in {
     val guest = guestRoute.createAGuest(1, 1, ConfirmationStatus.PENDING, isHost = false)
-    val element = getElement
+    val element: Element = getElement
     Delete("/event/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "Event deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
-      getElementById(element.getId).isEmpty shouldEqual true
+      val optElem = getElementById(element.getId)
+      print(optElem)
+      optElem.isEmpty shouldEqual true
     }
     Delete("/event/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -150,7 +160,7 @@ class EventRouteTest extends AnyWordSpec with Matchers with ScalatestRouteTest w
   }
 
   private def getElementById(id: Int): Option[Element] = {
-    val futureSet: Future[Option[Element]] = elements.byId(id)
-    Await.result(futureSet, Duration.Inf)
+    val eventualMaybeElement: Future[Option[Element]] = elements.byId(id)
+    Await.result(eventualMaybeElement, Duration.Inf)
   }
 }

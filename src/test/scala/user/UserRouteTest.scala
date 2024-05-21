@@ -21,7 +21,7 @@ import scala.concurrent.duration.{Duration, DurationInt}
 
 class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
   private val users = Server.setUpUsers()
-  private val events = Server.setUpEvents()
+  private val events = Server.setUpEvents(users)
   private val guests = Server.setUpGuests(events, users)
   private val elements = Server.setUpElements(events, users)
   private val route = Server.combinedRoutes(users, events, guests, elements)
@@ -118,7 +118,7 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
-      events.byId(event.getId).isEmpty shouldEqual true
+      getEventByID(event.getId).isEmpty shouldEqual true
       getElementById(element.getId).isEmpty shouldEqual true
       isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
@@ -153,6 +153,10 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
   private def getElementById(id: Int): Option[Element] = {
     val futureSet: Future[Option[Element]] = elements.byId(id)
     Await.result(futureSet, Duration.Inf)
+  }
+  private def getEventByID(eventId: Int) = {
+    val event : Future[Option[Event]] = events.byId(eventId)
+    Await.result(event, Duration.Inf)
   }
 
 }

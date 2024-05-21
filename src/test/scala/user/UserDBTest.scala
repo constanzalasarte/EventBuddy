@@ -19,12 +19,12 @@ import util.DBTables.userTable
 import java.time.Instant
 import java.util.Date
 import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.Duration
 import slick.jdbc.PostgresProfile.api._
 
 class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
   private var users = Server.setUpUsers()
-  private val events = Server.setUpEvents()
+  private val events = Server.setUpEvents(users)
   private var guests = Server.setUpGuests(events, users)
   private var elements = Server.setUpElements(events, users)
   private var route = Server.combinedRoutes(users, events, guests, elements)
@@ -139,7 +139,7 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
       guests.byId(guest.getId).isEmpty shouldEqual true
-      events.byId(event.getId).isEmpty shouldEqual true
+      getEventByID(event.getId).isEmpty shouldEqual true
       getElementById(element.getId).isEmpty shouldEqual true
       isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
@@ -155,6 +155,11 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
       status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "There is no user with id 1"
     }
+  }
+
+  private def getEventByID(eventId: Int) = {
+    val event : Future[Option[Event]] = events.byId(eventId)
+    Await.result(event, Duration.Inf)
   }
 
   private def getElement(event: Event, userSet: Set[Int]) = {
