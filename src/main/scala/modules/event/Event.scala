@@ -37,7 +37,7 @@ object Event {
     incrementID()
     id
   }
-  def start() = id=0
+  def start(): Unit = id=0
 
   private def incrementID(): Unit = id = id+1
 }

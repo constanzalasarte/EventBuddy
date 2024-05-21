@@ -63,7 +63,7 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
     )
   }
 
-  private def getUsers(): Route = {
+  private def getUsers: Route = {
     val futureSet: Future[Set[User]] = users.getUsers()
     onComplete(futureSet) {
       case Success(userSet) => complete(StatusCodes.OK, userSet)
