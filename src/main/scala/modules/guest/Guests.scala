@@ -4,7 +4,7 @@ import modules.event.{CheckEvents, Event}
 import modules.guest.repository.{GuestRepository, SetGuestRepo}
 import modules.user.{CheckUsers, User}
 import server.Server.executionContext
-import util.{Created, Error, Ok, Result, Version}
+import util.Version
 import util.exceptions.IDNotFoundException
 
 import scala.concurrent.Future
@@ -20,8 +20,9 @@ case class Guests(private val repository: GuestRepository, private val userServi
   def addGuest(request: GuestRequest): Future[Guest] =
     for{
       userNotExist <- userNotExists(request.userId)
+      eventNotExist <- eventNotExists(request.eventId)
     } yield {
-      checkReqValues(request, userNotExist)
+      checkReqValues(request, userNotExist, eventNotExist)
       val guest = request.getGuest
       repository.addGuest(guest)
       guest
@@ -48,7 +49,9 @@ case class Guests(private val repository: GuestRepository, private val userServi
 
   private def checkPatchValues(patch: GuestPatchRequest): Future[Unit] = {
     if(patch.hasEventId)
-      checkEvent(patch)
+      for{
+      _ <- checkEvent(patch)
+      } yield {}
     if (patch.hasUserId) {
       for{
         _ <- checkUser(patch)
@@ -65,12 +68,22 @@ case class Guests(private val repository: GuestRepository, private val userServi
     }
   }
 
-  private def checkEvent(patch: GuestPatchRequest): Unit = {
-    if (eventNotExists(patch.eventId.get)) throw IDNotFoundException("event", patch.eventId.get)
+  private def checkEvent(patch: GuestPatchRequest): Future[Unit] = {
+    for{
+      eventNotExists <- eventNotExists(patch.eventId.get)
+    } yield{
+      if(eventNotExists)
+        throw IDNotFoundException("event", patch.eventId.get)
+    }
   }
 
-  private def eventNotExists(id: Int) =
-    eventService.byId(id).isEmpty
+  private def eventNotExists(id: Int): Future[Boolean] = {
+    for {
+      event <- eventService.byId(id)
+    } yield {
+      event.isEmpty
+    }
+  }
 
   private def updateGuest(guestPatch: GuestPatchRequest, maybeGuest: Option[Guest]) = {
     val guest = maybeGuest.get
@@ -108,10 +121,10 @@ case class Guests(private val repository: GuestRepository, private val userServi
       user.isEmpty
     }
   }
-  private def checkReqValues(request: GuestRequest, userNotExist: Boolean): Unit = {
+  private def checkReqValues(request: GuestRequest, userNotExist: Boolean, eventNotExist: Boolean): Unit = {
     if (userNotExist)
       throw IDNotFoundException("user", request.userId)
-    if (eventNotExists(request.eventId))
+    if (eventNotExist)
       throw IDNotFoundException("event", request.eventId)
   }
 }

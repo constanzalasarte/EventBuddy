@@ -129,9 +129,12 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
         case e: IDNotFoundException => print(e.getMessage)
       }
     }
-    val deletedEvents = events.deleteByCreatorId(id)
-    guests.deleteByEvents(deletedEvents)
-    elements.deleteInEvents(deletedEvents)
+    for{
+      deletedEvents <- events.deleteByCreatorId(id)
+    } yield {
+      guests.deleteByEvents(deletedEvents)
+      elements.deleteInEvents(deletedEvents)
+    }
   }
 
   private def checkUser(id: Int): Future[Option[User]] =
