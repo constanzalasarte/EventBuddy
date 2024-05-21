@@ -25,7 +25,7 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
       pathEnd{
         concat(
           get {
-            getUsers()
+            getUsers
           },
           post  {
             entity(as[UserRequest]) { userRequest =>

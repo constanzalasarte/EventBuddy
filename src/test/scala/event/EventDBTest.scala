@@ -17,7 +17,7 @@ import server.Server
 import slick.jdbc.JdbcBackend.Database
 import util.DBTables.{createSchema, dropSchema}
 
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset}
+import java.time.{Instant, LocalDate, ZoneId}
 import java.util.Date
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -128,7 +128,7 @@ class EventDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual getDate()
+      responseAs[Event].getDate shouldEqual getDate
       responseAs[Event].getId shouldEqual 1
     }
     Get("/event/byId?id=2") ~> route ~> check {
@@ -166,7 +166,7 @@ class EventDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with
       responseAs[Event].getName shouldEqual "new event name"
       responseAs[Event].getDescription shouldEqual "new event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual getDate()
+      responseAs[Event].getDate shouldEqual getDate
       responseAs[Event].getId shouldEqual 1
     }
     Put("/event/byId?id=2", event) ~> route ~> check {
@@ -233,7 +233,7 @@ class EventDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with
     Await.result(eventualMaybeElement, Duration.Inf)
   }
 
-  private def getDate(): Date = {
+  private def getDate: Date = {
     val local = LocalDate.ofInstant(date.toInstant, ZoneId.systemDefault())
     Date.from(local.atStartOfDay(ZoneId.systemDefault()).toInstant)
   }
