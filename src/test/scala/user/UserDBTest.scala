@@ -21,12 +21,20 @@ import java.util.Date
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import slick.jdbc.PostgresProfile.api._
+import testing.{DBLifecycle, H2Capabilities}
 
-class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
-  private var users = Server.setUpUsers()
-  private var events = Server.setUpEvents(users)
-  private var guests = Server.setUpGuests(events, users)
-  private var elements = Server.setUpElements(events, users)
+class UserDBTest extends AsyncWordSpec
+  with Matchers
+  with BeforeAndAfterEach
+  with ScalatestRouteTest
+  with UserJsonProtocol
+  with EventJsonProtocol
+  with H2Capabilities
+  with DBLifecycle {
+  private var users = Server.setUpUsersDB(db)
+  private var events = Server.setUpEventDB(db, users)
+  private var guests = Server.setUpGuestsDB(events, users, db)
+  private var elements = Server.setUpElementsDB(db, events, users)
   private var route = Server.combinedRoutes(users, events, guests, elements)
 
   private var eventRoute = UseEventRoute(events)
@@ -35,17 +43,11 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
 
   private val date = Date.from(Instant.now())
 
-  var db: Database = _
-
-
   override protected def beforeEach(): Unit = {
-    db = Database.forConfig("eventBuddy-db")
-    Await.result(db.run(userTable.schema.create), Duration.Inf)
-
     users = Server.setUpUsersDB(db)
-    events = Server.setUpEvents(users)
-    guests = Server.setUpGuests(events, users)
-    elements = Server.setUpElements(events, users)
+    events = Server.setUpEventDB(db, users)
+    guests = Server.setUpGuestsDB(events, users, db)
+    elements = Server.setUpElementsDB(db, events, users)
 
     route = Server.combinedRoutes(users, events, guests, elements)
 
@@ -77,13 +79,6 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   }
 
   "get user by id" in {
-    val user = UserRequest("user@mail.com", "userName")
-    Post("/user", user) ~> route ~> check {
-      status shouldEqual StatusCodes.Created
-      responseAs[User].getEmail shouldEqual "user@mail.com"
-      responseAs[User].getUserName shouldEqual "userName"
-      responseAs[User].getId shouldEqual 1
-    }
     Get("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[User].getEmail shouldEqual "user@mail.com"
@@ -101,15 +96,7 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   }
 
   "modify user by id" in {
-    val userReq = UserRequest("user@mail.com", "userName")
-    Post("/user", userReq) ~> route ~> check {
-      status shouldEqual StatusCodes.Created
-      responseAs[User].getEmail shouldEqual "user@mail.com"
-      responseAs[User].getUserName shouldEqual "userName"
-      responseAs[User].getId shouldEqual 1
-    }
     val user = UserPatchRequest(Some("changedEmail@mail.com"), None)
-
     Put("/user/byId?id=1", user) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[User].getEmail shouldEqual "changedEmail@mail.com"
@@ -127,13 +114,6 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   }
 
   "delete user by id" in {
-    val userReq = UserRequest("user@mail.com", "userName")
-    Post("/user", userReq) ~> route ~> check {
-      status shouldEqual StatusCodes.Created
-      responseAs[User].getEmail shouldEqual "user@mail.com"
-      responseAs[User].getUserName shouldEqual "userName"
-      responseAs[User].getId shouldEqual 1
-    }
     val event = eventRoute.createAEvent("name", "description", 1, date)
     val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)
     val element = getElement(event, Set.empty)

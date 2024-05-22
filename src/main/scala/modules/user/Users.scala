@@ -1,6 +1,6 @@
 package modules.user
 
-import modules.user.repository.{SetUserRepo, UserRepository, UserDBRepo}
+import modules.user.repository.{UserRepository, UserDBRepo}
 import slick.jdbc.JdbcBackend.Database
 import util.Version
 import util.Version.{DBVersion, SetVersion}
@@ -11,7 +11,6 @@ import server.Server.executionContext
 object UserServiceFactory{
   def createService(version: Version, db: Option[Database] = None): Users =
     version match {
-      case SetVersion => Users(SetUserRepo(Set.empty))
       case DBVersion => Users(UserDBRepo(db.get))
     }
 }

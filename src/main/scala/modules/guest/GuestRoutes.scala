@@ -16,7 +16,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
       pathEnd{
         concat(
           get{
-            complete(StatusCodes.OK, guests.getGuests)
+            getGuests
           },
           post{
             entity(as[GuestRequest]){ guestRequest =>
@@ -47,6 +47,14 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
         )
       }
     )
+
+  private def getGuests: Route = {
+    val futureSetGuest = guests.getGuests
+    onComplete(futureSetGuest){
+      case Success(setGuest) => complete(StatusCodes.OK, setGuest)
+      case Failure(_) => internalServerError
+    }
+  }
 
   private def deleteGuestById(id: String): Route = {
     try{

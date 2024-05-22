@@ -2,7 +2,7 @@ package modules.element.service
 
 import modules.element.controller.Element
 import modules.element.controller.json.input.{ElementPatchRequest, ElementRequest}
-import modules.element.repository.{ElementDBRepo, ElementsRepository, ElementsSetRepo}
+import modules.element.repository.{ElementDBRepo, ElementsRepository}
 import modules.event.{CheckEvents, Event}
 import modules.user.CheckUsers
 import server.Server.executionContext
@@ -19,7 +19,6 @@ object CreateElementService{
                             eventService: CheckEvents,
                             userService: CheckUsers, db: Option[Database] = None): ElementService =
     version match {
-      case SetVersion => ElementService(ElementsSetRepo(Set.empty), eventService, userService)
       case DBVersion => ElementService(ElementDBRepo(db.get), eventService, userService)
     }
 }

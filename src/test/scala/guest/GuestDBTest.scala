@@ -1,6 +1,5 @@
 package guest
 
-import element.UseElementRoute
 import modules.event.{Event, EventJsonProtocol, EventRequest}
 import modules.guest._
 import modules.user.{User, UserJsonProtocol, UserRequest}
@@ -10,36 +9,42 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import server.Server
-import slick.jdbc.JdbcBackend.Database
-import util.DBTables.{createSchema, dropSchema}
+import testing.{DBLifecycle, H2Capabilities}
 
 import java.time.Instant
 import java.util.Date
 
 
-class GuestDBTest extends AnyWordSpec with BeforeAndAfterEach with Matchers with ScalatestRouteTest with GuestJsonProtocol with UserJsonProtocol with EventJsonProtocol{
-  private var users = Server.setUpUsers()
-  private var events = Server.setUpEvents(users)
-  private var guests = Server.setUpGuests(events, users)
-  private var elements = Server.setUpElements(events, users)
+class GuestDBTest extends AnyWordSpec
+  with BeforeAndAfterEach
+  with Matchers
+  with ScalatestRouteTest
+  with GuestJsonProtocol
+  with UserJsonProtocol
+  with EventJsonProtocol
+  with H2Capabilities
+  with DBLifecycle {
+
+  private var users = Server.setUpUsersDB(db)
+  private var events = Server.setUpEventDB(db, users)
+  private var guests = Server.setUpGuestsDB(events, users, db)
+  private var elements = Server.setUpElementsDB(db, events, users)
   private var route = Server.combinedRoutes(users, events, guests, elements)
 
   private val date = Date.from(Instant.now())
 
-  var db: Database = _
-
   override protected def beforeEach(): Unit = {
-    db = createSchema()
+    super.beforeEach()
     users = Server.setUpUsersDB(db)
     events = Server.setUpEventDB(db, users)
     guests = Server.setUpGuestsDB(events, users, db)
-    elements = Server.setUpElements(events, users)
+    elements = Server.setUpElementsDB(db, events, users)
     route = Server.combinedRoutes(users, events, guests, elements)
   }
-
   override protected def afterEach(): Unit = {
-    dropSchema(db)
+    super.afterEach()
   }
+
   "get no guests" in {
     Get("/guest") ~> route ~> check {
       status shouldEqual StatusCodes.OK

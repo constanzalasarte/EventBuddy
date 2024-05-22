@@ -45,9 +45,9 @@ case class UserDBRepo(db: Database) extends UserRepository{
   override def deleteById(id: Int): Future[Unit] = {
     val q = userTable.filter(_.id === id).delete
     for{
-      _ <- db.run(q)
+      deleted <- db.run(q)
     } yield {
-      true
+      deleted == 1
     }
   }
 

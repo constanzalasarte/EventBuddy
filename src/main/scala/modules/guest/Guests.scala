@@ -1,7 +1,7 @@
 package modules.guest
 
 import modules.event.{CheckEvents, Event}
-import modules.guest.repository.{GuestDBRepo, GuestRepository, SetGuestRepo}
+import modules.guest.repository.{GuestDBRepo, GuestRepository}
 import modules.user.{CheckUsers, User}
 import server.Server.executionContext
 import slick.jdbc.JdbcBackend.Database
@@ -14,7 +14,6 @@ import scala.concurrent.Future
 object GuestServiceFactory{
   def createService(version: Version, userService: CheckUsers, eventService: CheckEvents, db: Option[Database] = None): Guests =
     version match {
-      case Version.SetVersion => Guests(SetGuestRepo(Set.empty), userService, eventService)
       case DBVersion => Guests(GuestDBRepo(db.get), userService, eventService)
     }
 }

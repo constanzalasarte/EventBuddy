@@ -9,6 +9,7 @@ import java.util.Date
 
 class EventTest extends AnyFlatSpec{
   "Two events" should "be created and the first one must have id 1 and the second one id 2" in {
+    Event.start()
     val name = "Event"
     val description = "This is an event"
     val creatorId = 1

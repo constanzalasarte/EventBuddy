@@ -15,6 +15,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import server.Server
 import slick.jdbc.JdbcBackend.Database
+import testing.{DBLifecycle, H2Capabilities}
 import util.DBTables.{createSchema, dropSchema}
 
 import java.time.{Instant, LocalDate, ZoneId}
@@ -23,11 +24,18 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 
-class EventDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with EventJsonProtocol with UserJsonProtocol{
-  private var users = Server.setUpUsers()
-  private var events = Server.setUpEvents(users)
-  private var guests = Server.setUpGuests(events, users)
-  private var elements = Server.setUpElements(events, users)
+class EventDBTest extends AnyWordSpec
+  with Matchers
+  with BeforeAndAfterEach
+  with ScalatestRouteTest
+  with EventJsonProtocol
+  with UserJsonProtocol
+  with H2Capabilities
+  with DBLifecycle {
+  private var users = Server.setUpUsersDB(db)
+  private var events = Server.setUpEventDB(db, users)
+  private var guests = Server.setUpGuestsDB(events, users, db)
+  private var elements = Server.setUpElementsDB(db, events, users)
   private var route = Server.combinedRoutes(users, events, guests, elements)
 
   private var guestRoute = UseGuestRoute(guests)
@@ -37,21 +45,15 @@ class EventDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(1.seconds)
 
-  var db: Database = _
-
   override protected def beforeEach(): Unit = {
-    db = createSchema()
+    super.beforeEach()
     users = Server.setUpUsersDB(db)
     events = Server.setUpEventDB(db, users)
-    guests = Server.setUpGuests(events, users)
-    elements = Server.setUpElements(events, users)
+    guests = Server.setUpGuestsDB(events, users, db)
+    elements = Server.setUpElementsDB(db, events, users)
     elementRoute = UseElementRoute(elements)
     guestRoute = UseGuestRoute(guests)
     route = Server.combinedRoutes(users, events, guests, elements)
-  }
-
-  override protected def afterEach(): Unit = {
-    dropSchema(db)
   }
 
   "get no events" in {

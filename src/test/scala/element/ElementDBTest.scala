@@ -4,8 +4,8 @@ import event.UseEventRoute
 import modules.element.controller.Element
 import modules.element.controller.json.ElementJsonProtocol
 import modules.element.controller.json.input.{ElementPatchRequest, ElementRequest}
-import modules.event.EventJsonProtocol
-import modules.user.UserJsonProtocol
+import modules.event.{Event, EventJsonProtocol}
+import modules.user.{User, UserJsonProtocol}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
@@ -14,9 +14,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import server.Server
-import slick.jdbc.JdbcBackend.Database
+import testing.{DBLifecycle, H2Capabilities}
 import user.UseUserRoute
-import util.DBTables.{createSchema, dropSchema, userElement}
+import util.DBTables.{createSchema, dropSchema}
 
 import java.time.Instant
 import java.util.Date
@@ -24,11 +24,20 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 
-class ElementDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with EventJsonProtocol with UserJsonProtocol with ElementJsonProtocol {
-  private var users = Server.setUpUsers()
-  private var events = Server.setUpEvents(users)
-  private var guests = Server.setUpGuests(events, users)
-  private var elements = Server.setUpElements(events, users)
+class ElementDBTest extends AnyWordSpec
+  with Matchers
+  with BeforeAndAfterEach
+  with ScalatestRouteTest
+  with EventJsonProtocol
+  with UserJsonProtocol
+  with ElementJsonProtocol
+  with H2Capabilities
+  with DBLifecycle {
+
+  private var users = Server.setUpUsersDB(db)
+  private var events = Server.setUpEventDB(db, users)
+  private var guests = Server.setUpGuestsDB(events, users, db)
+  private var elements = Server.setUpElementsDB(db, events, users)
   private var route = Server.combinedRoutes(users, events, guests, elements)
 
   private var userRoute = UseUserRoute(users)
@@ -36,29 +45,24 @@ class ElementDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach wi
 
   private val date = Date.from(Instant.now())
 
-  private var user = userRoute.createAUser("email", "name")
-  private var event = eventRoute.createAEvent("event name", "event description", user.getId, date)
-
-  var db: Database = _
+  private var user : User = _
+  private var event: Event = _
 
   override protected def beforeEach(): Unit = {
-    db = createSchema()
+    super.beforeEach()
     users = Server.setUpUsersDB(db)
     events = Server.setUpEventDB(db, users)
-    guests = Server.setUpGuests(events, users)
+    guests = Server.setUpGuestsDB(events, users, db)
     elements = Server.setUpElementsDB(db, events, users)
 
     userRoute = UseUserRoute(users)
     eventRoute = UseEventRoute(events)
 
     route = Server.combinedRoutes(users, events, guests, elements)
-    user = userRoute.createAUser("email", "name")
-    event = eventRoute.createAEvent("event name", "event description", user.getId, date)
+    this.user = userRoute.createAUser("email", "name")
+    this.event = eventRoute.createAEvent("event name", "event description", user.getId, date)
   }
 
-  override protected def afterEach(): Unit = {
-    dropSchema(db)
-  }
 
   "get no elements" in {
     Get("/element") ~> route ~> check {

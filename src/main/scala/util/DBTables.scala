@@ -8,8 +8,9 @@ import slick.jdbc.JdbcType
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.LocalDate
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.{Duration, DurationInt}
+import server.Server.executionContext
 
 object DBTables {
   case class UserEntity(id: Option[Int], email: String, userName: String)
@@ -93,14 +94,16 @@ object DBTables {
 
   val userElement = TableQuery[UserElementTable]
 
-  def createSchema(): Database = {
-    val db = Database.forConfig("eventBuddy-db")
-    Await.result(db.run(userTable.schema.createIfNotExists), Duration.Inf)
-    Await.result(db.run(eventTable.schema.createIfNotExists), Duration.Inf)
-    Await.result(db.run(guestTable.schema.createIfNotExists), Duration.Inf)
-    Await.result(db.run(elementTable.schema.createIfNotExists), Duration.Inf)
-    Await.result(db.run(userElement.schema.createIfNotExists), Duration.Inf)
-    db
+  def createSchema(db: Database): Future[Database] = {
+    for {
+      _ <-db.run(userTable.schema.createIfNotExists)
+      _ <- db.run(eventTable.schema.createIfNotExists)
+      _ <- db.run(guestTable.schema.createIfNotExists)
+      _ <- db.run(elementTable.schema.createIfNotExists)
+      _ <-db.run(userElement.schema.createIfNotExists)
+    } yield{
+      db
+    }
   }
   def dropSchema(db: Database): Unit = {
     Await.result(db.run(DBIO.seq(
@@ -110,6 +113,5 @@ object DBTables {
       eventTable.schema.drop,
       userTable.schema.drop)
     ), 2.seconds)
-    db.close()
   }
 }

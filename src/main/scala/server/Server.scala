@@ -10,9 +10,11 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
 import routes.ServerRoutes
 import slick.jdbc.JdbcBackend.Database
+import util.DBTables
 import util.Version.{DBVersion, SetVersion}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext}
 import scala.io.StdIn
 
 object Server extends ServerRoutes {
@@ -23,31 +25,10 @@ object Server extends ServerRoutes {
   private val interface = config.getString("app.interface")
   private val port = config.getInt("app.port")
 
-  def setUpElements(eventService: CheckEvents, userService: Users): ElementService ={
-    val createElem = CreateElementService
-    createElem.createElementService(SetVersion, eventService, userService)
-  }
-
-  def setUpGuests(eventService: CheckEvents, userService: CheckUsers): Guests ={
-    val guestFactory = GuestServiceFactory
-    guestFactory.createService(SetVersion, userService, eventService)
-  }
-
   def setUpGuestsDB(eventService: CheckEvents, userService: CheckUsers, db: Database): Guests ={
     val guestFactory = GuestServiceFactory
     Guest.start()
-    guestFactory.createService(SetVersion, userService, eventService, Some(db))
-  }
-
-
-  def setUpUsers(): Users = {
-    val userFactory = UserServiceFactory
-    userFactory.createService(SetVersion)
-  }
-
-  def setUpEvents(userService: CheckUsers): Events = {
-    val eventFactory = EventServiceFactory
-    eventFactory.createService(SetVersion, userService)
+    guestFactory.createService(DBVersion, userService, eventService, Some(db))
   }
 
   def setUpUsersDB(db: Database): Users = {
@@ -69,10 +50,13 @@ object Server extends ServerRoutes {
   }
 
   def startRoutes(): Unit = {
-    val userService = setUpUsers()
-    val eventService = setUpEvents(userService)
-    val guestService = setUpGuests(eventService, userService)
-    val elementService = setUpElements(eventService, userService)
+    var db = Database.forConfig("eventBuddy-db")
+    val futureDB = DBTables.createSchema(db)
+    db = Await.result(futureDB, Duration.Inf)
+    val userService = setUpUsersDB(db)
+    val eventService = setUpEventDB(db, userService)
+    val guestService = setUpGuestsDB(eventService, userService, db)
+    val elementService = setUpElementsDB(db, eventService, userService)
     val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(userService, eventService, guestService, elementService))
     println(s"Server online\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return

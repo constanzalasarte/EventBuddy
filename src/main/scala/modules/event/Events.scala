@@ -1,6 +1,6 @@
 package modules.event
 
-import modules.event.repository.{EventDBRepo, EventRepository, EventSetRepo}
+import modules.event.repository.{EventDBRepo, EventRepository}
 import modules.user.CheckUsers
 import server.Server.executionContext
 import slick.jdbc.JdbcBackend.Database
@@ -13,7 +13,6 @@ import scala.concurrent.Future
 object EventServiceFactory{
   def createService(version: Version, userService: CheckUsers, db: Option[Database] = None): Events =
     version match {
-      case Version.SetVersion => Events(EventSetRepo(Set.empty), userService)
       case DBVersion => Events(EventDBRepo(db.get), userService)
     }
 }

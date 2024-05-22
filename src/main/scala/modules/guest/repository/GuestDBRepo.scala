@@ -49,8 +49,10 @@ case class GuestDBRepo(db: Database) extends GuestRepository {
   override def deleteById(id: Int): Future[Boolean] = {
     val q = eventTable.filter(_.id === id).delete
     for {
-      _ <- db.run(q)
-    } yield {true}
+      deleted <- db.run(q)
+    } yield {
+      deleted == 1
+    }
   }
 
   private def transformGuest(guest: Guest): GuestEntity =
