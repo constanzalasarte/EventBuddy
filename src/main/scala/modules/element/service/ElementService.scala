@@ -67,7 +67,7 @@ case class ElementService(
     }
   }
 
-  def getElements(): Future[Set[Element]] =
+  def getElements: Future[Set[Element]] =
     repository.getElements
 
   def updateById(id: Int, elemPatch: ElementPatchRequest): Future[Element] = {
@@ -183,10 +183,9 @@ case class ElementService(
 
   private def idThatDoesntExist(ids: Set[Int]) : Future[Option[Int]] = {
     for {
-      noUserIds: Option[Set[Int]] <- userService.noUserIds(ids)
+      noUserIds: Set[Int] <- userService.noUserIds(ids)
     } yield{
-      if(noUserIds.isEmpty) None
-      else noUserIds.get.headOption
+      noUserIds.headOption
     }
   }
 

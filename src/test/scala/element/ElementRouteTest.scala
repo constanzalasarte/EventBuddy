@@ -176,7 +176,7 @@ class ElementRouteTest extends AnyWordSpec with Matchers with BeforeAndAfterEach
   }
 
   private def getElementSet: Set[Element] = {
-    val futureSet: Future[Set[Element]] = elements.getElements()
+    val futureSet: Future[Set[Element]] = elements.getElements
     Await.result(futureSet, Duration.Inf)
   }
 }

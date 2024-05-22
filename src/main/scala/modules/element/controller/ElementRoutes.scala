@@ -41,7 +41,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
     )
 
   private def getElements: Route = {
-    val futureSet: Future[Set[Element]] = service.getElements()
+    val futureSet: Future[Set[Element]] = service.getElements
     onComplete(futureSet) {
       case Success(elemSet) => complete(StatusCodes.OK, elemSet)
       case Failure(_) => complete(StatusCodes.NoContent, "There is a failure getting the element set")

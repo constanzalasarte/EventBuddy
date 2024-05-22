@@ -226,7 +226,7 @@ class ElementDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach wi
   }
 
   private def getElementSet: Set[Element] = {
-    val futureSet: Future[Set[Element]] = elements.getElements()
+    val futureSet: Future[Set[Element]] = elements.getElements
     Await.result(futureSet, Duration.Inf)
   }
 
