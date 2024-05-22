@@ -6,6 +6,7 @@ import util.Version
 import util.Version.{DBVersion, SetVersion}
 
 import scala.concurrent.Future
+import server.Server.executionContext
 
 object UserServiceFactory{
   def createService(version: Version, db: Option[Database] = None): Users =
@@ -33,7 +34,13 @@ case class Users(private var repository: UserRepository) extends CheckUsers {
     repository.deleteById(id)
   }
 
-  override def noUserIds(ids: Set[Int]): Future[Option[Set[Int]]] = {
-    repository.noUserIds(ids)
+  override def noUserIds(ids: Set[Int]): Future[Set[Int]] = {
+    for{
+      userIds <- repository.getUsers()
+    } yield {
+      ids.filterNot(id => idIsInsideUserId(id, userIds))
+    }
   }
+  private def idIsInsideUserId(id: Int, users: Set[User]): Boolean =
+    users.exists(user => user.getId == id)
 }

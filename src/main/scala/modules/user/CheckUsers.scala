@@ -12,5 +12,5 @@ trait CheckUsers {
    * @param ids
    * @return the no user related ids
    */
-  def noUserIds(ids: Set[Int]): Future[Option[Set[Int]]]
+  def noUserIds(ids: Set[Int]): Future[Set[Int]]
 }
