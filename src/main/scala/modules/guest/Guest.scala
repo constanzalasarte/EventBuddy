@@ -22,8 +22,10 @@ case class Guest(
   def changeIsHost(newIsHost: Boolean): Unit = isHost = newIsHost
 }
 
-private object Guest {
+object Guest {
   private var id = 0
+
+  def start(): Unit = id = 0
 
   private def getNewID: Int = {
     incrementID()

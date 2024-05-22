@@ -39,7 +39,7 @@ object DBTables {
 
   val eventTable = TableQuery[EventTable]
 
-  case class GuestEntity(id: Option[Long], userId: Int, eventId: Int, confirmationStatus: ConfirmationStatus, isHost: Boolean)
+  case class GuestEntity(id: Option[Int], userId: Int, eventId: Int, confirmationStatus: ConfirmationStatus, isHost: Boolean)
 
   class GuestTable(tag: Tag) extends Table[GuestEntity](tag, "guests") {
     implicit val confirmationMapper: JdbcType[ConfirmationStatus] with BaseTypedType[ConfirmationStatus] =
@@ -48,7 +48,7 @@ object DBTables {
         s => ConfirmationStatus.withName(s)
       )
 
-    def id = column[Long]("ID", O.PrimaryKey, O.AutoInc)
+    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
     def userID = column[Int]("USER_ID")
     def eventId = column[Int]("EVENT_ID")
     def confirmationStatus = column[ConfirmationStatus]("CONFIRMATION_STATUS")
