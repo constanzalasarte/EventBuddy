@@ -150,9 +150,8 @@ case class EventRoutes(events: Events, guests: CheckGuests, elements: CheckEleme
   private def deleteGuestAndElement(id: String): Future[Unit] = {
     for {
       _ <- elements.deleteByEventId(id.toInt)
-    } yield {
-      guests.deleteByEventId(id.toInt)
-    }
+      _ <- guests.deleteByEventId(id.toInt)
+    } yield {}
   }
 
   private def createEvent(eventRequest: EventRequest): Route = {

@@ -4,7 +4,7 @@ import element.UseElementRoute
 import guest.UseGuestRoute
 import modules.element.controller.Element
 import modules.event.{Event, EventJsonProtocol, EventPatchRequest, EventRequest}
-import modules.guest.ConfirmationStatus
+import modules.guest.{ConfirmationStatus, Guest}
 import modules.user.{User, UserJsonProtocol, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -208,7 +208,7 @@ class EventDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with
     Delete("/event/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "Event deleted"
-      guests.byId(guest.getId).isEmpty shouldEqual true
+      getGuestById(guest.getId).isEmpty shouldEqual true
       val optElem = getElementById(element.getId)
       print(optElem)
       optElem.isEmpty shouldEqual true
@@ -221,6 +221,11 @@ class EventDBTest extends AnyWordSpec with Matchers with BeforeAndAfterEach with
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
+  }
+
+  private def getGuestById(id: Int): Option[Guest] = {
+    val guest = guests.byId(id)
+    Await.result(guest, Duration.Inf)
   }
 
   private def getElement = {

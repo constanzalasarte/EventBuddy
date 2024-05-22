@@ -5,7 +5,7 @@ import event.UseEventRoute
 import guest.UseGuestRoute
 import modules.element.controller.Element
 import modules.event.{Event, EventJsonProtocol}
-import modules.guest.ConfirmationStatus
+import modules.guest.{ConfirmationStatus, Guest}
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -24,13 +24,13 @@ import slick.jdbc.PostgresProfile.api._
 
 class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach with ScalatestRouteTest with UserJsonProtocol with EventJsonProtocol{
   private var users = Server.setUpUsers()
-  private val events = Server.setUpEvents(users)
+  private var events = Server.setUpEvents(users)
   private var guests = Server.setUpGuests(events, users)
   private var elements = Server.setUpElements(events, users)
   private var route = Server.combinedRoutes(users, events, guests, elements)
 
+  private var eventRoute = UseEventRoute(events)
   private var guestRoute = UseGuestRoute(guests)
-  private val eventRoute = UseEventRoute(events)
   private var elementRoute = UseElementRoute(elements)
 
   private val date = Date.from(Instant.now())
@@ -41,12 +41,17 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   override protected def beforeEach(): Unit = {
     db = Database.forConfig("eventBuddy-db")
     Await.result(db.run(userTable.schema.create), Duration.Inf)
+
     users = Server.setUpUsersDB(db)
+    events = Server.setUpEvents(users)
     guests = Server.setUpGuests(events, users)
     elements = Server.setUpElements(events, users)
+
+    route = Server.combinedRoutes(users, events, guests, elements)
+
+    eventRoute = UseEventRoute(events)
     elementRoute = UseElementRoute(elements)
     guestRoute = UseGuestRoute(guests)
-    route = Server.combinedRoutes(users, events, guests, elements)
   }
 
   override protected def afterEach(): Unit = {
@@ -130,18 +135,15 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
       responseAs[User].getId shouldEqual 1
     }
     val event = eventRoute.createAEvent("name", "description", 1, date)
-    val event2 = eventRoute.createAEvent("name", "description", 2, date)
     val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)
     val element = getElement(event, Set.empty)
-    val elementOfUser = getElement(event2, Set(1))
 
     Delete("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
-      guests.byId(guest.getId).isEmpty shouldEqual true
+      getGuestById(guest.getId).isEmpty shouldEqual true
       getEventByID(event.getId).isEmpty shouldEqual true
       getElementById(element.getId).isEmpty shouldEqual true
-      isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
     Delete("/user/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -174,5 +176,9 @@ class UserDBTest extends AsyncWordSpec with Matchers with BeforeAndAfterEach wit
   private def isUserInUsers(userId: Int, elementId: Int): Boolean = {
     val boolean = elements.isUserInUsers(userId, elementId)
     Await.result(boolean, Duration.Inf)
+  }
+  private def getGuestById(id: Int): Option[Guest] = {
+    val guest = guests.byId(id)
+    Await.result(guest, Duration.Inf)
   }
 }

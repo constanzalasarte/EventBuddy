@@ -82,9 +82,18 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
 
   private def deleteUser(id: String): Route = {
     val inCaseUserExist = (_: Option[User]) => {
-      deleteGuestsEventsAndElements(id.toInt)
-      users.deleteById(id.toInt)
-      complete(StatusCodes.OK, "User deleted")
+      val future = deleteGuestsEventsAndElements(id.toInt)
+      onComplete(future) {
+        case Success(_) => {
+          val eventual = users.deleteById(id.toInt)
+          onComplete(eventual){
+            case Success(_) => complete(StatusCodes.OK, "User deleted")
+          }
+        }
+        case Failure(exception) => exception match {
+          case e: IDNotFoundException => complete(StatusCodes.NotFound, e.getMessage)
+        }
+      }
     }
     checkIfUserExist(id, inCaseUserExist)
   }
@@ -95,46 +104,55 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
     Future { user }
   }
 
-  private def getUserById(id: String) = {
+  private def getUserById(id: String): Route = {
     val inCaseUserExist = (user: Option[User]) => complete(StatusCodes.OK, user.get)
 
     checkIfUserExist(id, inCaseUserExist)
   }
 
-  private def checkIfUserExist(id: String, inCaseUserExist: Option[User] => Route) = {
+  private def checkIfUserExist(id: String, inCaseUserExist: Option[User] => Route): Route = {
     try {
       val futureUser: Future[Option[User]] = checkUser(id.toInt)
       onComplete(futureUser) {
-        case Success(optUser) =>
+        case Success(optUser) => {
           if (optUser.isEmpty) notFoundResponse(id)
           else {
             inCaseUserExist(optUser)
           }
-        case Failure(_) => notFoundResponse(id)
+        }
+        case Failure(_) => {
+          notFoundResponse(id)
+        }
       }
     }
     catch {
-      case _: NumberFormatException =>
+      case _: NumberFormatException => {
         IntExpectedResponse
+      }
     }
   }
 
 
-  private def deleteGuestsEventsAndElements(id: Int): Unit = {
-    guests.deleteByUserId(id)
-    val future = elements.deleteUserInUsers(id)
-    future.onComplete {
-      case Success(_) =>
-      case Failure(exception) => exception match {
-        case e: IDNotFoundException => print(e.getMessage)
-      }
-    }
+  private def deleteGuestsEventsAndElements(id: Int): Future[Unit] = {
     for{
+      _ <- deleteGuestAndElements(id)
+      _ <- deleteEvents(id)
+    } yield {}
+  }
+
+  private def deleteEvents(id: Int): Future[Unit] =
+    for {
       deletedEvents <- events.deleteByCreatorId(id)
     } yield {
       guests.deleteByEvents(deletedEvents)
       elements.deleteInEvents(deletedEvents)
     }
+
+  private def deleteGuestAndElements(id: Int) = {
+    for{
+      _ <- elements.deleteUserInUsers(id)
+      _ <- guests.deleteByUserId(id)
+    } yield {}
   }
 
   private def checkUser(id: Int): Future[Option[User]] =

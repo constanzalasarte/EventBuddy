@@ -2,7 +2,7 @@ package modules.guest
 
 import modules.event.CheckEvents
 import modules.user.CheckUsers
-import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.{StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onComplete, parameters, path, pathEnd, post, put}
 import util.exceptions.IDNotFoundException
@@ -50,20 +50,28 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
 
   private def deleteGuestById(id: String): Route = {
     try{
-      val deleted: Boolean = guests.deleteById(id.toInt)
-      if (!deleted) return IDNotFoundResponse("guest", id.toInt)
-      complete(StatusCodes.OK, s"Guest deleted")
+      val futureDeleted = guests.deleteById(id.toInt)
+      onComplete(futureDeleted) {
+        case Success(deleted) => {
+          if (!deleted) IDNotFoundResponse("guest", id.toInt)
+          else complete(StatusCodes.OK, s"Guest deleted")
+        }
+        case Failure(_) => {
+          internalServerError
+        }
+      }
     }
     catch {
-      case _: NumberFormatException =>
+      case _: NumberFormatException => {
         intExpectedResponse
+      }
     }
   }
 
   private def updateGuestById(id: String, guestPatch: GuestPatchRequest): Route = {
     try{
       val future = guests.changeGuest(id.toInt, guestPatch)
-      getResponse(future)
+      getResponse(future, StatusCodes.OK)
     }
     catch {
       case _: NumberFormatException =>
@@ -73,11 +81,15 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
     }
   }
 
-  private def getGuestById(id: String) = {
-    try{
-      val guest: Option[Guest] = guests.byId(id.toInt)
-      if(guest.isEmpty) IDNotFoundResponse("guest", id.toInt)
-      else complete(StatusCodes.OK, guest.get)
+  private def getGuestById(id: String): Route = {
+    try {
+      val eventualMaybeGuest = guests.byId(id.toInt)
+      onComplete(eventualMaybeGuest) {
+        case Success(maybeGuest) =>
+          if (maybeGuest.isEmpty) IDNotFoundResponse("guest", id.toInt)
+          else complete(StatusCodes.OK, maybeGuest.get)
+        case Failure(_) => internalServerError
+      }
     }
     catch {
       case _: NumberFormatException =>
@@ -87,17 +99,20 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
 
   private def createGuest(guestRequest: GuestRequest): Route = {
     val eventualGuest = guests.addGuest(guestRequest)
-    getResponse(eventualGuest)
+    getResponse(eventualGuest, StatusCodes.Created)
   }
 
-  private def getResponse(eventualGuest: Future[Guest]) = {
+  private def getResponse(eventualGuest: Future[Guest], statusCode: StatusCode): Route = {
     onComplete(eventualGuest) {
-      case Success(guest) => complete(StatusCodes.OK, guest)
+      case Success(guest) => complete(statusCode, guest)
       case Failure(exception) => exception match {
         case e: IDNotFoundException => complete(StatusCodes.NotFound, e.getMessage)
       }
     }
   }
+
+  private def internalServerError =
+    complete(StatusCodes.InternalServerError, "")
 
   private def intExpectedResponse =
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")

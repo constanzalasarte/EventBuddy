@@ -4,8 +4,9 @@ import modules.event.{Event, EventJsonProtocol, EventRequest}
 import modules.guest.{ConfirmationStatus, Guest, GuestJsonProtocol, GuestPatchRequest, GuestRequest}
 import modules.user.{User, UserJsonProtocol, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import server.Server
 

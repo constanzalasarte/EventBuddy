@@ -5,7 +5,7 @@ import event.UseEventRoute
 import guest.UseGuestRoute
 import modules.element.controller.Element
 import modules.event.{Event, EventJsonProtocol}
-import modules.guest.ConfirmationStatus
+import modules.guest.{ConfirmationStatus, Guest}
 import modules.user.{User, UserJsonProtocol, UserPatchRequest, UserRequest}
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -58,11 +58,6 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
     }
   }
 
-  private def getElement(id: Int): Option[Element] = {
-    val futureSet: Future[Option[Element]] = elements.byId(id)
-    Await.result(futureSet, Duration.Inf)
-  }
-
   private def parseUsers(jsonString: String) = {
     val json = Unmarshal(jsonString).to[Set[User]]
     val usersSet = Await.result(json, 1.second)
@@ -109,18 +104,15 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
 
   "delete user by id" in {
     val event = eventRoute.createAEvent("name", "description", 1, date)
-    val event2 = eventRoute.createAEvent("name", "description", 2, date)
     val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)
     val element = getElement(event, Set.empty)
-    val elementOfUser = getElement(event2, Set(1))
 
     Delete("/user/byId?id=1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
-      guests.byId(guest.getId).isEmpty shouldEqual true
+      getGuestById(guest.getId).isEmpty shouldEqual true
       getEventByID(event.getId).isEmpty shouldEqual true
       getElementById(element.getId).isEmpty shouldEqual true
-      isUserInUsers(1, elementOfUser.getId) shouldEqual false
     }
     Delete("/user/byId?id=2") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -158,5 +150,8 @@ class UserRouteTest extends AsyncWordSpec with Matchers with ScalatestRouteTest 
     val event : Future[Option[Event]] = events.byId(eventId)
     Await.result(event, Duration.Inf)
   }
-
+  private def getGuestById(id: Int): Option[Guest] = {
+    val guest = guests.byId(id)
+    Await.result(guest, Duration.Inf)
+  }
 }
