@@ -1,7 +1,8 @@
 suite:
   name: "EventBuddy Test Suite"
 files:
-  - file: src/test/bat/event/GetEvent.dwl
+  - file: batTests/event/GetEvent.dwl
+  - file: batTests/event/AddEvent.dwl
 reporters:
 #  - type: HTML
 #    outFile: /tmp/HTML.html
