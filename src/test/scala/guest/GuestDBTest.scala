@@ -66,7 +66,7 @@ class GuestDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
 
@@ -95,7 +95,7 @@ class GuestDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
 
@@ -142,7 +142,7 @@ class GuestDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
 
@@ -211,7 +211,7 @@ class GuestDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
 

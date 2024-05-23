@@ -19,7 +19,7 @@ object DateMarshalling {
     }
 
     private val localIsoDateFormatter = new ThreadLocal[SimpleDateFormat] {
-      override def initialValue(): SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      override def initialValue(): SimpleDateFormat = new SimpleDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z")
     }
 
     private def parseIsoDateString(date: String) =

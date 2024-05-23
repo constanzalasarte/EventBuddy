@@ -14,9 +14,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpec
 import server.Server
-import slick.jdbc.JdbcBackend.Database
 import testing.{DBLifecycle, H2Capabilities}
-import util.DBTables.{createSchema, dropSchema}
 
 import java.time.{Instant, LocalDate, ZoneId}
 import java.util.Date
@@ -77,7 +75,7 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
     val eventWDiffId = EventRequest("event name", "event description", 2, date)
@@ -122,7 +120,7 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
     Get("/event/byId?id=1") ~> route ~> check {
@@ -157,7 +155,7 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
 
@@ -201,7 +199,7 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
       responseAs[Event].getCreatorId shouldEqual 1
-      responseAs[Event].getDate shouldEqual date
+      responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
 
