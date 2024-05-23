@@ -1,0 +1,9 @@
+suite:
+  name: "EventBuddy Test Suite"
+files:
+  - file: src/test/bat/event/GetEvent.dwl
+reporters:
+#  - type: HTML
+#    outFile: /tmp/HTML.html
+  - type: JSON
+    outFile: /tmp/JSON.json
