@@ -81,7 +81,7 @@ case class EventRoutes(events: Events, guests: CheckGuests, elements: CheckEleme
         }
         case Failure(exception) => exception match {
           case e: IDNotFoundException => {
-            complete(StatusCodes.NotFound, e.getMessage)
+            complete(StatusCodes.UnprocessableEntity, e.getMessage)
           }
           case msg: UnacceptableException => {
             complete(StatusCodes.NotAcceptable, msg.getMessage)
@@ -96,7 +96,7 @@ case class EventRoutes(events: Events, guests: CheckGuests, elements: CheckEleme
         intExpectedResponse
       }
       case msg: IDNotFoundException =>
-        complete(StatusCodes.NotFound, msg.getMessage)
+        complete(StatusCodes.UnprocessableEntity, msg.getMessage)
       case msg: UnacceptableException => {
         complete(StatusCodes.NotAcceptable, msg.getMessage)
       }
@@ -170,7 +170,7 @@ case class EventRoutes(events: Events, guests: CheckGuests, elements: CheckEleme
   }
 
   private def IDNotFoundResponse(name: String, id: Int) =
-    complete(StatusCodes.NotFound, s"There is no $name with id $id")
+    complete(StatusCodes.UnprocessableEntity, s"There is no $name with id $id")
 
   private def intExpectedResponse =
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")

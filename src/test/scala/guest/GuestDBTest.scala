@@ -119,7 +119,7 @@ class GuestDBTest extends AnyWordSpec
       responseAs[Guest].getId shouldEqual 1
     }
     Get("/guest/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no guest with id 2"
     }
     Get("/guest/byId?id=hola") ~> route ~> check {
@@ -230,7 +230,7 @@ class GuestDBTest extends AnyWordSpec
       responseAs[String] shouldEqual "Guest deleted"
     }
     Delete("/guest/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no guest with id 2"
     }
     Delete("/guest/byId?id=hola") ~> route ~> check {

@@ -86,7 +86,7 @@ class UserDBTest extends AsyncWordSpec
       responseAs[User].getId shouldEqual 1
     }
     Get("/user/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
     Get("/user/byId?id=hola") ~> route ~> check {
@@ -104,7 +104,7 @@ class UserDBTest extends AsyncWordSpec
       responseAs[User].getId shouldEqual 1
     }
     Put("/user/byId?id=2", user) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
     Put("/user/byId?id=hola", user) ~> route ~> check {
@@ -126,7 +126,7 @@ class UserDBTest extends AsyncWordSpec
       getElementById(element.getId).isEmpty shouldEqual true
     }
     Delete("/user/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
     Delete("/user/byId?id=hola") ~> route ~> check {
@@ -134,7 +134,7 @@ class UserDBTest extends AsyncWordSpec
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
     Get("/user/byId?id=1") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 1"
     }
   }

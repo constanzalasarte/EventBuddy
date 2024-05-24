@@ -85,7 +85,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
       case _: NumberFormatException =>
         intExpectedResponse
       case msg: IDNotFoundException =>
-        complete(StatusCodes.NotFound, msg.getMessage)
+        complete(StatusCodes.UnprocessableEntity, msg.getMessage)
     }
   }
 
@@ -126,5 +126,5 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
 
   private def IDNotFoundResponse(name: String, id: Int) =
-    complete(StatusCodes.NotFound, s"There is no $name with id $id")
+    complete(StatusCodes.UnprocessableEntity, s"There is no $name with id $id")
 }

@@ -171,6 +171,6 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
   }
 
   private def notFoundResponse(id: String) = {
-    complete(StatusCodes.NotFound, s"There is no user with id ${id.toInt}")
+    complete(StatusCodes.UnprocessableEntity, s"There is no user with id ${id.toInt}")
   }
 }

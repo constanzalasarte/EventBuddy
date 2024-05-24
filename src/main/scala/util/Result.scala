@@ -11,7 +11,7 @@ case class Ok[T](result: T) extends Result[T] {
 }
 case class Error[T](error: Throwable) extends Result[T] {
   override def getStatusCode: StatusCode = error match {
-    case _: IDNotFoundException => StatusCodes.NotFound
+    case _: IDNotFoundException => StatusCodes.UnprocessableEntity
     case _: UnacceptableException => StatusCodes.NotAcceptable
   }
 }

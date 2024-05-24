@@ -132,7 +132,7 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getId shouldEqual 1
     }
     Get("/event/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 2"
     }
     Get("/event/byId?id=hola") ~> route ~> check {
@@ -170,7 +170,7 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getId shouldEqual 1
     }
     Put("/event/byId?id=2", event) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 2"
     }
     Put("/event/byId?id=hola", event) ~> route ~> check {
@@ -180,7 +180,7 @@ class EventDBTest extends AnyWordSpec
 
     val eventWCreatorId = EventPatchRequest(None, None, Some(2), None)
     Put("/event/byId?id=1", eventWCreatorId) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
   }

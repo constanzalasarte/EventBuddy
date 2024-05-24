@@ -83,7 +83,7 @@ class ElementDBTest extends AnyWordSpec
     }
     val elementWDiffId = ElementRequest("name", 1, eventId = 100000, maxUsers = 2, users = Set.empty)
     Post("/element", elementWDiffId) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 100000"
     }
   }
@@ -126,7 +126,7 @@ class ElementDBTest extends AnyWordSpec
       responseAs[Element].getId shouldEqual 1
     }
     Get("/element/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no element with id 2"
     }
     Get("/element/byId?id=hola") ~> route ~> check {
@@ -155,7 +155,7 @@ class ElementDBTest extends AnyWordSpec
       responseAs[Element].getId shouldEqual 1
     }
     Put("/element/byId?id=2", elementPatch) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no element with id 2"
     }
     Put("/element/byId?id=hola", elementPatch) ~> route ~> check {
@@ -176,12 +176,12 @@ class ElementDBTest extends AnyWordSpec
     }
     val elementPatchWEventId = ElementPatchRequest(eventId = Some(-1))
     Put("/element/byId?id=1", elementPatchWEventId) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id -1"
     }
     val elementPatchWUsersId = ElementPatchRequest(users = Some(Set(-1)))
     Put("/element/byId?id=1", elementPatchWUsersId) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id -1"
     }
 
@@ -200,7 +200,7 @@ class ElementDBTest extends AnyWordSpec
     }
     val elementWUsers = ElementRequest("name", 1, eventId = event.getId, maxUsers = 1, users = Set(-1))
     Post("/element", elementWUsers) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id -1"
     }
   }
@@ -220,7 +220,7 @@ class ElementDBTest extends AnyWordSpec
       responseAs[String] shouldEqual "Element deleted"
     }
     Delete("/element/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no element with id 2"
     }
     Delete("/element/byId?id=hola") ~> route ~> check {

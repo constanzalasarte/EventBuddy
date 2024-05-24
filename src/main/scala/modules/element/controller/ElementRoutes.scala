@@ -77,7 +77,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
         case Failure(exception) => exception match{
           case _: NumberFormatException => intExpectedResponse
           case msg: IDNotFoundException =>
-            complete(StatusCodes.NotFound, msg.getMessage)
+            complete(StatusCodes.UnprocessableEntity, msg.getMessage)
           case msg: UnacceptableException =>
             complete(StatusCodes.NotAcceptable, msg.getMessage)
         }
@@ -86,7 +86,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
     catch {
       case _: NumberFormatException => intExpectedResponse
       case msg: IDNotFoundException =>
-        complete(StatusCodes.NotFound, msg.getMessage)
+        complete(StatusCodes.UnprocessableEntity, msg.getMessage)
       case msg: UnacceptableException =>
         complete(StatusCodes.NotAcceptable, msg.getMessage)
     }
@@ -117,7 +117,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
         case Failure(exception) => exception match{
           case _: NumberFormatException => intExpectedResponse
           case msg: IDNotFoundException =>
-            complete(StatusCodes.NotFound, msg.getMessage)
+            complete(StatusCodes.UnprocessableEntity, msg.getMessage)
           case msg: UnacceptableException =>
             complete(StatusCodes.NotAcceptable, msg.getMessage)
         }
@@ -125,14 +125,14 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
     }
     catch {
       case msg: IDNotFoundException =>
-        complete(StatusCodes.NotFound, msg.getMessage)
+        complete(StatusCodes.UnprocessableEntity, msg.getMessage)
       case msg: UnacceptableException =>
         complete(StatusCodes.NotAcceptable, msg.getMessage)
     }
   }
 
   private def elementIDNotFound(id: Int) =
-    complete(StatusCodes.NotFound, s"There is no element with id $id")
+    complete(StatusCodes.UnprocessableEntity, s"There is no element with id $id")
 
   private def intExpectedResponse =
     complete(StatusCodes.NotAcceptable, "Int expected, received a no int type id")
