@@ -16,7 +16,7 @@ object DBTables {
   case class UserEntity(id: Option[Int], email: String, userName: String)
 
   class UserTable(tag: Tag) extends Table[UserEntity](tag, "users") {
-    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
+    def id = column[Int]("ID", O.PrimaryKey)
     def email = column[String]("EMAIL")
     def userName = column[String]("USERNAME")
     override def * =
@@ -28,7 +28,7 @@ object DBTables {
   case class EventEntity(id: Option[Int], name: String, description: String, creatorId: Int, date: LocalDate)
 
   class EventTable(tag: Tag) extends Table[EventEntity](tag, "events") {
-    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
+    def id = column[Int]("ID", O.PrimaryKey)
     def name = column[String]("NAME")
     def description = column[String]("DESCRIPTION")
     def creatorId = column[Int]("CREATOR_ID")
@@ -49,7 +49,7 @@ object DBTables {
         s => ConfirmationStatus.withName(s)
       )
 
-    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
+    def id = column[Int]("ID", O.PrimaryKey)
     def userID = column[Int]("USER_ID")
     def eventId = column[Int]("EVENT_ID")
     def confirmationStatus = column[ConfirmationStatus]("CONFIRMATION_STATUS")
@@ -68,7 +68,7 @@ object DBTables {
   case class ElementEntity(id: Option[Int], name: String, quantity: Int, eventId: Int, maxUsers: Int)
 
   class ElementTable(tag: Tag) extends Table[ElementEntity](tag, "elements") {
-    def id = column[Int]("ID", O.PrimaryKey, O.AutoInc)
+    def id = column[Int]("ID", O.PrimaryKey)
     def name = column[String]("NAME")
     def quantity = column[Int]("QUANTITY")
     def eventId = column[Int]("EVENT_ID")
