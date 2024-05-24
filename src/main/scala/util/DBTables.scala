@@ -114,4 +114,7 @@ object DBTables {
       userTable.schema.drop)
     ), 2.seconds)
   }
+  def close(db: Database): Unit = {
+    db.close()
+  }
 }

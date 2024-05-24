@@ -167,7 +167,7 @@ class GuestDBTest extends AnyWordSpec
       responseAs[Guest].getId shouldEqual 1
     }
     Put("/guest/byId?id=2", guest) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no guest with id 2"
     }
     Put("/guest/byId?id=hola", guest) ~> route ~> check {
@@ -177,13 +177,13 @@ class GuestDBTest extends AnyWordSpec
 
     val guestWUserId = GuestPatchRequest(Some(2), None, None, None)
     Put("/guest/byId?id=1", guestWUserId) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
 
     val guestWEventId = GuestPatchRequest(None, Some(2), None, None)
     Put("/guest/byId?id=1", guestWEventId) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 2"
     }
 

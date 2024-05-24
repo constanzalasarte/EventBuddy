@@ -136,7 +136,7 @@ case class EventRoutes(events: Events, guests: CheckGuests, elements: CheckEleme
             case Success(_) => complete(StatusCodes.OK, s"Event deleted")
           }
         case Failure(exception) => exception match {
-          case e: IDNotFoundException => complete(StatusCodes.NotFound, e.getMessage)
+          case e: IDNotFoundException => complete(StatusCodes.UnprocessableEntity, e.getMessage)
           case _ => internalErrorResponse
         }
       }
@@ -159,7 +159,7 @@ case class EventRoutes(events: Events, guests: CheckGuests, elements: CheckEleme
     onComplete(future) {
       case Success(event) => complete(StatusCodes.Created, event)
       case Failure(exception) => exception match {
-        case e: IDNotFoundException => complete(StatusCodes.NotFound, e.getMessage)
+        case e: IDNotFoundException => complete(StatusCodes.UnprocessableEntity, e.getMessage)
         case _ => return complete(StatusCodes.InternalServerError, "")
       }
     }

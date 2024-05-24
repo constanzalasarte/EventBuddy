@@ -114,7 +114,7 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
     onComplete(eventualGuest) {
       case Success(guest) => complete(statusCode, guest)
       case Failure(exception) => exception match {
-        case e: IDNotFoundException => complete(StatusCodes.NotFound, e.getMessage)
+        case e: IDNotFoundException => complete(StatusCodes.UnprocessableEntity, e.getMessage)
       }
     }
   }

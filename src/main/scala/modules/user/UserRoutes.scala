@@ -91,7 +91,7 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
           }
         }
         case Failure(exception) => exception match {
-          case e: IDNotFoundException => complete(StatusCodes.NotFound, e.getMessage)
+          case e: IDNotFoundException => complete(StatusCodes.UnprocessableEntity, e.getMessage)
         }
       }
     }
@@ -101,6 +101,7 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
   private def createUser(userRequest: UserRequest): Future[User] = {
     val user = userRequest.getUser
     users.addUser(user)
+    println(user)
     Future { user }
   }
 

@@ -11,7 +11,8 @@ import org.apache.pekko.http.scaladsl.Http
 import routes.ServerRoutes
 import slick.jdbc.JdbcBackend.Database
 import util.DBTables
-import util.Version.{DBVersion, SetVersion}
+import util.DBTables.{close, dropSchema}
+import util.Version.DBVersion
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
@@ -59,10 +60,19 @@ object Server extends ServerRoutes {
     val elementService = setUpElementsDB(db, eventService, userService)
     val bindingFuture = Http().newServerAt(interface, port).bind(combinedRoutes(userService, eventService, guestService, elementService))
     println(s"Server online\nPress RETURN to stop...")
-    StdIn.readLine() // let it run until user presses return
+    var str = StdIn.readLine() // let it run until user presses return
+    while(str != "\n"){
+      str = StdIn.readLine() // let it run until user presses return
+    }
     bindingFuture
       .flatMap(_.unbind())
-      .onComplete(_ => system.terminate())
+      .onComplete(_ => {
+        println("dropping schema...")
+        dropSchema(db)
+        println("closing db...")
+        close(db)
+        system.terminate()
+      })
   }
 
   def main(args: Array[String]): Unit = {

@@ -80,7 +80,7 @@ class EventDBTest extends AnyWordSpec
     }
     val eventWDiffId = EventRequest("event name", "event description", 2, date)
     Post("/event", eventWDiffId) ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
   }
@@ -214,7 +214,7 @@ class EventDBTest extends AnyWordSpec
       optElem.isEmpty shouldEqual true
     }
     Delete("/event/byId?id=2") ~> route ~> check {
-      status shouldEqual StatusCodes.NotFound
+      status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 2"
     }
     Delete("/event/byId?id=hola") ~> route ~> check {
