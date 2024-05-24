@@ -7,16 +7,12 @@ suite("get event") in [
     GET `$(config.url)/event/byId` with {} assert [
         $.response.status mustEqual 200 /*Ok*/,
         $.response.body mustEqual "/event/byId"
-    ] execute [
-        log($.response.body)
     ]
   ],
   it must 'answer 200 getting empty set of events' in [
         GET `$(config.url)/event` with {} assert [
             $.response.status mustEqual 200 /*Ok*/,
             $.response.body mustEqual []
-        ] execute [
-            log($.response.body)
         ]
     ]
 ]

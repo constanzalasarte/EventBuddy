@@ -7,7 +7,7 @@ import * from bat::Mutable
 var context = HashMap()
 ---
 suite("add event") in [
-    it should 'answer 404 when creating an event' in [
+    it should 'answer 422 when creating an event' in [
         POST `$(config.url)/event` with {
             body: {
                 name: "event name",
