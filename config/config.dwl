@@ -1,6 +1,6 @@
 %dw 2.0
 ---
 {
-  url:'http://localhost:8080/event',
+  url:'http://localhost:8080',
   env:'config'
 }
