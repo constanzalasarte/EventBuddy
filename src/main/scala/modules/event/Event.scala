@@ -3,11 +3,11 @@ package modules.event
 import java.util.Date
 
 case class Event(
-             private var name: String,
-             private var description: String,
-             private var creatorId: Int,
-             private var date: Date,
-             private val id : Int = Event.getNewID)
+                  var name: String,
+                  var description: String,
+                  var creatorId: Int,
+                  var date: Date,
+                  id : Int = Event.getNewID)
 {
   def getName: String = name
 

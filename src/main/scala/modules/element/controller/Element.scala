@@ -1,12 +1,12 @@
 package modules.element.controller
 
 case class Element(
-             private var name: String,
-             private var quantity: Int,
-             private var eventId: Int,
-             private var maxUsers: Int,
-             private var users: Set[Int],
-             private val id : Int = Element.getNewID)
+             var name: String,
+             var quantity: Int,
+             var eventId: Int,
+             var maxUsers: Int,
+             var users: Set[Int],
+             id : Int = Element.getNewID)
 {
   def getName: String = name
 

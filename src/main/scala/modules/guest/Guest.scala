@@ -3,11 +3,11 @@ package modules.guest
 import ConfirmationStatus.ConfirmationStatus
 
 case class Guest(
-  private var userId: Int,
-  private var eventId: Int,
-  private var confirmationStatus: ConfirmationStatus,
-  private var isHost: Boolean,
-  private val id: Int = Guest.getNewID,
+  var userId: Int,
+  var eventId: Int,
+  var confirmationStatus: ConfirmationStatus,
+  var isHost: Boolean,
+  val id: Int = Guest.getNewID,
 ){
   def getUserId: Int = userId
   def getEventId: Int = eventId

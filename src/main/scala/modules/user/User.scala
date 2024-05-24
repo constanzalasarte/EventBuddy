@@ -1,6 +1,6 @@
 package modules.user
 
-case class User(private var email: String, private var userName: String, private val id: Int = User.getNewID) {
+case class User(var email: String, var userName: String, id: Int = User.getNewID) {
   def getEmail: String = email
 
   def getUserName: String = userName
