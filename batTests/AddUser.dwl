@@ -5,7 +5,8 @@ import * from bat::Mutable
 
 var context = HashMap()
 ---
-suite("add event") in [
+suite("add user, in  this suite the idea is to create a user, an event,
+an element and a guest, and it should all be deleted when the user is deleted") in [
     it should 'answer 201 when creating an event' in [
         POST `$(config.url)/user` with {
             body: {

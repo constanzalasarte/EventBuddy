@@ -4,6 +4,7 @@ files:
   - file: batTests/event/GetEvent.dwl
   - file: batTests/event/AddEvent.dwl
   - file: batTests/event/ModifyEvent.dwl
+  - file: batTests/AddUser.dwl
 reporters:
 #  - type: HTML
 #    outFile: /tmp/HTML.html
