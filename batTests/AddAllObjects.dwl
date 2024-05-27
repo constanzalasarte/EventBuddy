@@ -7,7 +7,7 @@ var context = HashMap()
 ---
 suite("add user, in  this suite the idea is to create a user, an event,
 an element and a guest, and it should all be deleted when the user is deleted") in [
-    it should 'answer 201 when creating an event' in [
+    it should 'answer CREATED when creating a user' in [
         POST `$(config.url)/user` with {
             body: {
                 email: "user@mail.com",
@@ -19,7 +19,7 @@ an element and a guest, and it should all be deleted when the user is deleted") 
             context.set('userId', $.response.body.id),
         ]
     ],
-    it must 'answer 201 when creating an event' in [
+    it must 'answer CREATED when creating an event' in [
         POST `$(config.url)/event` with {
             body: {
                 name: "event name",
@@ -33,7 +33,7 @@ an element and a guest, and it should all be deleted when the user is deleted") 
             context.set('eventId', $.response.body.id),
         ]
     ],
-     it must 'answer 201 when creating an element' in [
+     it must 'answer CREATED when creating an element' in [
         POST `$(config.url)/element` with {
             body: {
                 name: "element name",
@@ -48,7 +48,7 @@ an element and a guest, and it should all be deleted when the user is deleted") 
             context.set('elementId', $.response.body.id),
         ]
     ],
-    it must 'answer 201 when creating an guest' in [
+    it must 'answer CREATED when creating an guest' in [
         POST `$(config.url)/guest` with {
             body: {
                 userId: context.get('userId'),
@@ -62,8 +62,8 @@ an element and a guest, and it should all be deleted when the user is deleted") 
             context.set('guestId', $.response.body.id),
         ]
     ],
-    it must 'delete 200 a user' in [
-        DELETE `$(config.url)/event/byId?id=$(context.get('userId'))` with {} assert [
+    it must 'delete OK a user' in [
+        DELETE `$(config.url)/user/byId?id=$(context.get('userId'))` with {} assert [
             $.response.status mustEqual 200
         ]
     ],
