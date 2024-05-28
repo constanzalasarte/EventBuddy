@@ -75,8 +75,35 @@ fun getObj(id: Number, url: String, obj: String) =
         $.response.status mustEqual OK,
     ]
 
-fun getObjAndCheckAttribute(id: Number, url: String, obj: String, attribute: String, value: String) =
+fun getObjAndCheckAttribute(id: Number, url: String, attribute: String, value: String, obj: String) =
     GET `$(url)/$(obj)/$(id)` with {} assert [
         $.response.status mustEqual OK,
         $.response.body[attribute] mustEqual value
+    ]
+
+fun modifyObjName(id: Number, url: String, value: String, obj: String) =
+    PUT `$(url)/$(obj)/$(id)` with {
+        body: {
+            name: value
+        }
+    } assert [
+        $.response.status mustEqual OK,
+    ]
+
+fun modifyUserName(id: Number, url: String, value: String) =
+    PUT `$(url)/user/$(id)` with {
+        body: {
+            userName: value
+        }
+    } assert [
+        $.response.status mustEqual OK,
+    ]
+
+fun modifyGuestStatus(id: Number, url: String, value: String) =
+    PUT `$(url)/guest/$(id)` with {
+        body: {
+            confirmationStatus: value
+        }
+    } assert [
+        $.response.status mustEqual OK,
     ]

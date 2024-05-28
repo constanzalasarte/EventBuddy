@@ -1,11 +1,11 @@
 suite:
   name: "EventBuddy Test Suite"
 files:
-  - file: batTests/event/GetEvent.dwl
-  - file: batTests/event/AddEvent.dwl
-  - file: batTests/event/ModifyEvent.dwl
   - file: batTests/AddAllObjects.dwl
-  - file: batTests/guest/AddGuest.dwl
+  - file: batTests/Event.dwl
+  - file: batTests/Guest.dwl
+  - file: batTests/User.dwl
+  - file: batTests/Element.dwl
 reporters:
 #  - type: HTML
 #    outFile: /tmp/HTML.html

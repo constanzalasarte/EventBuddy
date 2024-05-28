@@ -9,12 +9,9 @@ import * from lib::BasicRequest
 var context = HashMap()
 
 ---
-suite("get guest") in [
-    it must 'answer CREATED when creating a user' in [
-        createUser(context, config.url)
-    ],
-
-    it must 'answer CREATED when creating an event' in [
+suite("guest") in [
+    given must 'answer CREATED when creating an user and event' in [
+        createUser(context, config.url),
         createEvent(context, config.url)
     ],
 
@@ -27,7 +24,11 @@ suite("get guest") in [
     ],
 
     it should 'modify guest that has been created' in [
-        getObj(getGuestId(context), config.url, 'guest')
+        modifyGuestStatus(getGuestId(context), config.url, "ATTENDING")
+    ],
+
+    it should 'get guest that has been modified' in [
+        getObjAndCheckAttribute(getGuestId(context), config.url, "confirmationStatus", "ATTENDING", 'guest')
     ],
 
     it must 'delete OK a user' in [
