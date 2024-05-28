@@ -6,7 +6,7 @@ import modules.element.service.ElementService
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onComplete, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{Segment, as, complete, concat, delete, entity, get, onComplete, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
@@ -35,9 +35,7 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
           },
         )
       },
-      path("byId") {
-        getByIdRoute
-      },
+      getByIdRoute
     )
 
   private def getElements: Route = {
@@ -50,22 +48,19 @@ case class ElementRoutes(service: ElementService) extends ElementJsonProtocol {
 
   private def getByIdRoute: Route =
     concat(
-      get {
-        parameters("id") { id => {
+      (get & path(Segment)) { id => {
           getElementById(id)
-        }}
+        }
       },
-      delete {
-        parameters("id") { id => {
+      (delete & path(Segment)) { id => {
           deleteElementById(id)
-        }}
+        }
       },
-      put {
-        parameters("id") { id => {
+      (put & path(Segment)) { id => {
           entity(as[ElementPatchRequest]) { elementPatchRequest =>
             updateElementById(id, elementPatchRequest)
           }
-        }}
+        }
       },
     )
 

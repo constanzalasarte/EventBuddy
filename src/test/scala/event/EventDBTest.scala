@@ -100,12 +100,6 @@ class EventDBTest extends AnyWordSpec
     Await.result(eventsFuture, Duration.Inf)
   }
 
-  "get event1" in{
-    Get("/event/byId") ~> route ~> check {
-      responseAs[String] shouldEqual "/event/byId"
-    }
-  }
-
   "get event by id" in {
     val user = UserRequest("user@mail.com", "userName")
     Post("/user", user) ~> route ~> check {
@@ -123,7 +117,7 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getDate.toString shouldEqual date.toString
       responseAs[Event].getId shouldEqual 1
     }
-    Get("/event/byId?id=1") ~> route ~> check {
+    Get("/event/1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[Event].getName shouldEqual "event name"
       responseAs[Event].getDescription shouldEqual "event description"
@@ -131,11 +125,11 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getDate shouldEqual getDate
       responseAs[Event].getId shouldEqual 1
     }
-    Get("/event/byId?id=2") ~> route ~> check {
+    Get("/event/2") ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 2"
     }
-    Get("/event/byId?id=hola") ~> route ~> check {
+    Get("/event/hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
@@ -161,7 +155,7 @@ class EventDBTest extends AnyWordSpec
 
     val event = EventPatchRequest(Some("new event name"), Some("new event description"), None, None)
 
-    Put("/event/byId?id=1", event) ~> route ~> check {
+    Put("/event/1", event) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[Event].getName shouldEqual "new event name"
       responseAs[Event].getDescription shouldEqual "new event description"
@@ -169,17 +163,17 @@ class EventDBTest extends AnyWordSpec
       responseAs[Event].getDate shouldEqual getDate
       responseAs[Event].getId shouldEqual 1
     }
-    Put("/event/byId?id=2", event) ~> route ~> check {
+    Put("/event/2", event) ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 2"
     }
-    Put("/event/byId?id=hola", event) ~> route ~> check {
+    Put("/event/hola", event) ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
 
     val eventWCreatorId = EventPatchRequest(None, None, Some(2), None)
-    Put("/event/byId?id=1", eventWCreatorId) ~> route ~> check {
+    Put("/event/1", eventWCreatorId) ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
@@ -205,19 +199,18 @@ class EventDBTest extends AnyWordSpec
 
     val guest = guestRoute.createAGuest(1, 1, ConfirmationStatus.PENDING, isHost = false)
     val element: Element = getElement
-    Delete("/event/byId?id=1") ~> route ~> check {
+    Delete("/event/1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "Event deleted"
       getGuestById(guest.getId).isEmpty shouldEqual true
       val optElem = getElementById(element.getId)
-      print(optElem)
       optElem.isEmpty shouldEqual true
     }
-    Delete("/event/byId?id=2") ~> route ~> check {
+    Delete("/event/2") ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no event with id 2"
     }
-    Delete("/event/byId?id=hola") ~> route ~> check {
+    Delete("/event/hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }

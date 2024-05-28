@@ -4,7 +4,7 @@ import modules.event.CheckEvents
 import modules.user.CheckUsers
 import org.apache.pekko.http.scaladsl.model.{StatusCode, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onComplete, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{Segment, as, complete, concat, delete, entity, get, onComplete, parameters, path, pathEnd, post, put}
 import util.exceptions.IDNotFoundException
 
 import scala.concurrent.Future
@@ -25,28 +25,26 @@ case class GuestRoutes(guests: Guests, events: CheckEvents, users: CheckUsers) e
           }
         )
       },
-      path("byId"){
-        concat(
-          get{
-            parameters("id"){ id =>
-              getGuestById(id)
-            }
-          },
-          put{
-            parameters("id"){ id =>
-              entity(as[GuestPatchRequest]){ guestPatchRequest =>
-                updateGuestById(id, guestPatchRequest)
-              }
-            }
-          },
-          delete{
-            parameters("id"){ id =>
-              deleteGuestById(id)
-            }
-          },
-        )
-      }
+      getByIdRoute
     )
+
+  private def getByIdRoute: Route = {
+    concat(
+      (get & path(Segment)) { id => {
+        getGuestById(id)
+      }},
+      (put & path(Segment)) { id => {
+          entity(as[GuestPatchRequest]){ guestPatchRequest =>
+            updateGuestById(id, guestPatchRequest)
+          }
+        }
+      },
+      (delete & path(Segment)) { id => {
+        deleteGuestById(id)
+        }
+      },
+    )
+  }
 
   private def getGuests: Route = {
     val futureSetGuest = guests.getGuests

@@ -79,17 +79,17 @@ class UserDBTest extends AsyncWordSpec
   }
 
   "get user by id" in {
-    Get("/user/byId?id=1") ~> route ~> check {
+    Get("/user/1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[User].getEmail shouldEqual "user@mail.com"
       responseAs[User].getUserName shouldEqual "userName"
       responseAs[User].getId shouldEqual 1
     }
-    Get("/user/byId?id=2") ~> route ~> check {
+    Get("/user/2") ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
-    Get("/user/byId?id=hola") ~> route ~> check {
+    Get("/user/hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
@@ -97,17 +97,17 @@ class UserDBTest extends AsyncWordSpec
 
   "modify user by id" in {
     val user = UserPatchRequest(Some("changedEmail@mail.com"), None)
-    Put("/user/byId?id=1", user) ~> route ~> check {
+    Put("/user/1", user) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[User].getEmail shouldEqual "changedEmail@mail.com"
       responseAs[User].getUserName shouldEqual "userName"
       responseAs[User].getId shouldEqual 1
     }
-    Put("/user/byId?id=2", user) ~> route ~> check {
+    Put("/user/2", user) ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
-    Put("/user/byId?id=hola", user) ~> route ~> check {
+    Put("/user/hola", user) ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
@@ -118,22 +118,22 @@ class UserDBTest extends AsyncWordSpec
     val guest = guestRoute.createAGuest(1, event.getId, ConfirmationStatus.PENDING, isHost = false)
     val element = getElement(event, Set.empty)
 
-    Delete("/user/byId?id=1") ~> route ~> check {
+    Delete("/user/1") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "User deleted"
       getGuestById(guest.getId).isEmpty shouldEqual true
       getEventByID(event.getId).isEmpty shouldEqual true
       getElementById(element.getId).isEmpty shouldEqual true
     }
-    Delete("/user/byId?id=2") ~> route ~> check {
+    Delete("/user/2") ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 2"
     }
-    Delete("/user/byId?id=hola") ~> route ~> check {
+    Delete("/user/hola") ~> route ~> check {
       status shouldEqual StatusCodes.NotAcceptable
       responseAs[String] shouldEqual "Int expected, received a no int type id"
     }
-    Get("/user/byId?id=1") ~> route ~> check {
+    Get("/user/1") ~> route ~> check {
       status shouldEqual StatusCodes.UnprocessableEntity
       responseAs[String] shouldEqual "There is no user with id 1"
     }
@@ -152,10 +152,6 @@ class UserDBTest extends AsyncWordSpec
   private def getElementById(id: Int): Option[Element] = {
     val futureSet: Future[Option[Element]] = elements.byId(id)
     Await.result(futureSet, Duration.Inf)
-  }
-  private def isUserInUsers(userId: Int, elementId: Int): Boolean = {
-    val boolean = elements.isUserInUsers(userId, elementId)
-    Await.result(boolean, Duration.Inf)
   }
   private def getGuestById(id: Int): Option[Guest] = {
     val guest = guests.byId(id)

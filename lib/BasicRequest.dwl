@@ -62,21 +62,21 @@ fun createGuest(context, url) =
 
 
 fun checkThatNotExist(obj: String, id: String, url: String) =
-    GET `$(url)/$(obj)/byId?id=$(id)` with {} assert [
+    GET `$(url)/$(obj)/$(id)` with {} assert [
         $.response.status mustEqual UNPROCESSABLE_ENTITY,
         `There is no $(obj) with id $(id)` mustEqual $.response.body
     ]
 
 fun deleteUser(id: Number, url: String) =
-    DELETE `$(url)/user/byId?id=$(id)` with {} assert []
+    DELETE `$(url)/user/$(id)` with {} assert []
 
 fun getObj(id: Number, url: String, obj: String) =
-    GET `$(url)/$(obj)/byId?id=$(id)` with {} assert [
+    GET `$(url)/$(obj)/$(id)` with {} assert [
         $.response.status mustEqual OK,
     ]
 
 fun getObjAndCheckAttribute(id: Number, url: String, obj: String, attribute: String, value: String) =
-    GET `$(url)/$(obj)/byId?id=$(id)` with {} assert [
+    GET `$(url)/$(obj)/$(id)` with {} assert [
         $.response.status mustEqual OK,
         $.response.body[attribute] mustEqual value
     ]

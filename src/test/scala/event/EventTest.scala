@@ -14,7 +14,6 @@ class EventTest extends AnyFlatSpec{
     val description = "This is an event"
     val creatorId = 1
     val date = Date.from(Instant.now())
-    println(date)
     val event1 = new Event(name, description, creatorId, date)
     val event2 = new Event(name, description, creatorId, date)
     assert(event1.getId == 1)

@@ -6,7 +6,7 @@ import modules.guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, extractRequest, get, onComplete, onSuccess, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{Segment, as, complete, concat, delete, entity, extractRequest, get, onComplete, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.{Route, StandardRoute}
 import util.exceptions.IDNotFoundException
 
@@ -19,9 +19,7 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
 
   def userRoute: Route =
     concat(
-      path("byId"){
-        userByIdRoute
-      },
+      userByIdRoute,
       pathEnd{
         concat(
           get {
@@ -41,23 +39,18 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
 
   private def userByIdRoute = {
     concat(
-      get {
-        parameters("id") { id =>
-          getUserById(id)
+      (get & path(Segment)) { id => {
+        getUserById(id)
         }
       },
-      put {
-        parameters("id") { id =>
-          entity(as[UserPatchRequest]) { userPatchRequest =>
+      (put & path(Segment)) { id => {
+        entity(as[UserPatchRequest]) { userPatchRequest =>
             updateUserById(id, userPatchRequest)
           }
         }
       },
-      delete {
-        parameters("id") { id =>
-        {
+      (delete & path(Segment)) { id => {
           deleteUser(id)
-        }
         }
       }
     )
@@ -101,7 +94,6 @@ case class UserRoutes(users: Users, events: CheckEvents, guests: CheckGuests, el
   private def createUser(userRequest: UserRequest): Future[User] = {
     val user = userRequest.getUser
     users.addUser(user)
-    println(user)
     Future { user }
   }
 

@@ -9,7 +9,7 @@ import * from lib::BasicRequest
 var context = HashMap()
 
 fun unprocessableEventWName(id: Number, attribute: String, value: String) =
-    PUT `$(config.url)/event/byId?id=$(id)` with {
+    PUT `$(config.url)/event/$(id)` with {
         body: {
             attribute: value
         }
@@ -19,7 +19,7 @@ fun unprocessableEventWName(id: Number, attribute: String, value: String) =
     ]
 
 fun modifyEvent(id: Number, attribute: String, value: String) =
-    PUT `$(config.url)/event/byId?id=$(id)` with {
+    PUT `$(config.url)/event/$(id)` with {
         body: {
             attribute: value
         }

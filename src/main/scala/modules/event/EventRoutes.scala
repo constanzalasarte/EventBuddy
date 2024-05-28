@@ -5,7 +5,7 @@ import modules.guest.CheckGuests
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.{as, complete, concat, delete, entity, get, onComplete, onSuccess, parameters, path, pathEnd, post, put}
+import org.apache.pekko.http.scaladsl.server.Directives.{Segment, as, complete, concat, delete, entity, get, onComplete, onSuccess, parameters, path, pathEnd, post, put}
 import org.apache.pekko.http.scaladsl.server.Route
 import util.exceptions.{IDNotFoundException, UnacceptableException}
 
@@ -30,33 +30,22 @@ case class EventRoutes(events: Events, guests: CheckGuests, elements: CheckEleme
           },
         )
       },
-      path("byId") {
-        getByIdRoute
-      },
+      getByIdRoute
     )
 
   private def getByIdRoute = {
     concat(
-      get {
-        parameters("id") { id =>
+      (get & path(Segment)) { id =>
           getEventById(id)
-        }
       },
-      get {
-        complete("/event/byId")
-      },
-      delete {
-        parameters("id") { id => {
+      (delete & path(Segment)) { id => {
           deleteEvent(id)
         }
-        }
       },
-      put {
-        parameters("id") { id => {
+      (put & path(Segment)) { id => {
           entity(as[EventPatchRequest]) { eventPatch =>
             updateEvent(id, eventPatch)
           }
-        }
         }
       }
     )
