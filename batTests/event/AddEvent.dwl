@@ -32,7 +32,7 @@ suite("add event") in [
         createEvent(context, config.url)
     ],
     it should 'get event that has been created' in [
-        getEvent(getEventId(context), config.url)
+        getObj(getEventId(context), config.url, 'event')
     ],
     it must 'delete OK a user' in [
         deleteUser(getUserId(context), config.url)
