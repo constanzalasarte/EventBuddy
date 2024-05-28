@@ -78,10 +78,5 @@ fun getObj(id: Number, url: String, obj: String) =
 fun getObjAndCheckAttribute(id: Number, url: String, obj: String, attribute: String, value: String) =
     GET `$(url)/$(obj)/byId?id=$(id)` with {} assert [
         $.response.status mustEqual OK,
-        $.response.body.attribute mustEqual value
-    ] execute [
-        log($.response.body."name"),
-        log($.response.body.attribute),
-        log(`.response.body.$(attribute)`),
-        log($.response.body)
+        $.response.body[attribute] mustEqual value
     ]

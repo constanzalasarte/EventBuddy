@@ -40,11 +40,7 @@ suite("modify event") in [
     ],
 
     it should 'get event that has been modified' in [
-        getObjAndCheckAttribute(getEventId(context), config.url, 'event', "name", "event name"),
-        GET `$(config.url)/event/byId?id=$(getEventId(context))` with {} assert [
-            $.response.status mustEqual OK,
-            $.response.body."name" mustEqual "event name"
-        ]
+        getObjAndCheckAttribute(getEventId(context), config.url, 'event', "name", "event name")
     ],
 
     it must 'delete OK a user' in [
