@@ -27,6 +27,3 @@ suite("user") in [
       deleteUser(getUserId(context), config.url)
   ],
 ]
-
-
-
